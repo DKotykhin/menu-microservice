@@ -137,10 +137,10 @@ Create a `.env.local` file based on `.env.example`:
 
 ```env
 # gRPC server URL
-TRANSPORT_URL=0.0.0.0:5001
+TRANSPORT_URL=
 
 # PostgreSQL connection string
-DATABASE_URL=postgresql://user:password@localhost:5432/menu_db
+DATABASE_URL=
 ```
 
 ### Required Variables
