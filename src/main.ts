@@ -10,7 +10,9 @@ import { MENU_CATEGORY_V1_PACKAGE_NAME } from './generated-types/menu-category';
 import { GrpcExceptionFilter } from './utils/filters/grpc-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: process.env.NODE_ENV === 'production' ? ['error'] : ['log', 'debug', 'warn', 'error', 'verbose'],
+  });
 
   const logger = new Logger('Main');
   const configService = app.get(ConfigService);

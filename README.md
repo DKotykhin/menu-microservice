@@ -1,98 +1,321 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Menu Microservice
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based gRPC microservice for managing menu categories and menu items for the CoffeeDoor application. Supports multi-language content (EN, UA, RU) with full CRUD operations and position-based ordering.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Table of Contents
 
-## Description
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Technologies](#technologies)
+- [Data Models](#data-models)
+- [gRPC API](#grpc-api)
+- [Environment Configuration](#environment-configuration)
+- [Getting Started](#getting-started)
+- [Docker Deployment](#docker-deployment)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Overview
 
-## Project setup
+The Menu Microservice provides:
 
-```bash
-$ npm install
+- **Menu Category Management**: Create, read, update, delete, and reorder menu categories
+- **Menu Item Management**: CRUD operations for items within categories
+- **Multi-language Support**: Content available in English, Ukrainian, and Russian
+- **Position-based Ordering**: Transaction-safe reordering of categories and items
+- **Health Monitoring**: Service and database health check endpoints
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Menu Microservice                         │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
+│  │ MenuCategory    │  │ MenuItem        │  │ HealthCheck │ │
+│  │ Controller      │  │ Controller      │  │ Controller  │ │
+│  └────────┬────────┘  └────────┬────────┘  └──────┬──────┘ │
+│           │                    │                   │        │
+│  ┌────────▼────────┐  ┌────────▼────────┐         │        │
+│  │ MenuCategory    │  │ MenuItem        │         │        │
+│  │ Service         │  │ Service         │         │        │
+│  └────────┬────────┘  └────────┬────────┘         │        │
+│           │                    │                   │        │
+│           └──────────┬─────────┴───────────────────┘        │
+│                      │                                      │
+│             ┌────────▼────────┐                             │
+│             │  Prisma Service │                             │
+│             └────────┬────────┘                             │
+└──────────────────────┼──────────────────────────────────────┘
+                       │
+              ┌────────▼────────┐
+              │   PostgreSQL    │
+              └─────────────────┘
 ```
 
-## Compile and run the project
+## Technologies
 
-```bash
-# development
-$ npm run start
+| Category | Technology | Version |
+|----------|------------|---------|
+| Framework | NestJS | 11.0.1 |
+| Language | TypeScript | 5.7.3 |
+| Database | PostgreSQL | Latest |
+| ORM | Prisma | 7.2.0 |
+| Communication | gRPC | @grpc/grpc-js 1.14.3 |
+| Validation | class-validator | 0.14.3 |
+| Testing | Jest | 29.7.0 |
+| Container | Docker | Node 24-Alpine |
 
-# watch mode
-$ npm run start:dev
+## Data Models
 
-# production mode
-$ npm run start:prod
+### MenuCategory
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | Auto-generated primary key |
+| `language` | Enum | EN, UA, or RU |
+| `title` | String | Category name |
+| `description` | String? | Optional description |
+| `position` | Integer | Display order |
+| `imageUrl` | String? | Category image URL |
+| `isAvailable` | Boolean | Availability flag (default: true) |
+| `createdAt` | DateTime | Auto-generated |
+| `updatedAt` | DateTime | Auto-updated |
+| `menuItems` | MenuItem[] | Related items |
+
+### MenuItem
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | Auto-generated primary key |
+| `language` | Enum | EN, UA, or RU |
+| `title` | String | Item name |
+| `description` | String? | Optional description |
+| `price` | String | Price (string for currency precision) |
+| `position` | Integer | Display order within category |
+| `imageUrl` | String? | Item image URL |
+| `isAvailable` | Boolean | Availability flag (default: true) |
+| `createdAt` | DateTime | Auto-generated |
+| `updatedAt` | DateTime | Auto-updated |
+| `categoryId` | UUID | Foreign key to MenuCategory |
+
+## gRPC API
+
+### MenuCategoryService
+
+| Method | Request | Response | Description |
+|--------|---------|----------|-------------|
+| `GetFullMenuByLanguage` | `Language` | `MenuCategoryListWithItems` | Get all categories with items |
+| `GetMenuCategoriesByLanguage` | `Language` | `MenuCategoryList` | Get categories without items |
+| `GetMenuCategoryById` | `Id` | `MenuCategory` | Get single category |
+| `CreateMenuCategory` | `CreateMenuCategoryRequest` | `MenuCategory` | Create new category |
+| `UpdateMenuCategory` | `UpdateMenuCategoryRequest` | `MenuCategory` | Update existing category |
+| `ChangeMenuCategoryPosition` | `ChangeMenuCategoryPositionRequest` | `MenuCategory` | Reorder category |
+| `DeleteMenuCategory` | `Id` | `StatusResponse` | Delete category |
+
+### MenuItemService
+
+| Method | Request | Response | Description |
+|--------|---------|----------|-------------|
+| `GetMenuItemById` | `Id` | `MenuItem` | Get single item |
+| `GetMenuItemsByCategoryId` | `Id` | `MenuItemList` | Get items by category |
+| `CreateMenuItem` | `CreateMenuItemRequest` | `MenuItem` | Create new item |
+| `UpdateMenuItem` | `UpdateMenuItemRequest` | `MenuItem` | Update existing item |
+| `ChangeMenuItemPosition` | `ChangeMenuItemPositionRequest` | `MenuItem` | Reorder item |
+| `DeleteMenuItem` | `Id` | `StatusResponse` | Delete item |
+
+### HealthCheckService
+
+| Method | Request | Response | Description |
+|--------|---------|----------|-------------|
+| `CheckAppHealth` | `Empty` | `HealthCheckResponse` | Service availability |
+| `CheckDatabaseConnection` | `Empty` | `HealthCheckResponse` | Database connectivity |
+
+## Environment Configuration
+
+Create a `.env.local` file based on `.env.example`:
+
+```env
+# gRPC server URL
+TRANSPORT_URL=0.0.0.0:5001
+
+# PostgreSQL connection string
+DATABASE_URL=postgresql://user:password@localhost:5432/menu_db
 ```
 
-## Run tests
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `TRANSPORT_URL` | gRPC server binding address | `0.0.0.0:5001` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://...` |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL 15+
+- npm or yarn
+
+### Installation
 
 ```bash
-# unit tests
-$ npm run test
+# Install dependencies
+npm install
 
-# e2e tests
-$ npm run test:e2e
+# Generate Prisma client
+npx prisma generate
 
-# test coverage
-$ npm run test:cov
+# Run database migrations
+npx prisma migrate dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Running the Service
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Development mode (with hot reload)
+npm run start:dev
+
+# Production mode
+npm run start:prod
+
+# Debug mode
+npm run start:debug
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Generate TypeScript Types from Proto
 
-## Resources
+```bash
+# Generate types for menu-category
+npx protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+  --ts_proto_out=./src/generated-types ./proto/menu-category.proto \
+  --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb
 
-Check out a few resources that may come in handy when working with NestJS:
+# Generate types for menu-item
+npx protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+  --ts_proto_out=./src/generated-types ./proto/menu-item.proto \
+  --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Generate types for health-check
+npx protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+  --ts_proto_out=./src/generated-types ./proto/health-check.proto \
+  --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb
+```
 
-## Support
+## Docker Deployment
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Build and Run with Docker Compose
 
-## Stay in touch
+```bash
+# Build and start containers
+docker-compose up -d --build
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# View logs
+docker-compose logs -f menu-microservice
+
+# Stop containers
+docker-compose down
+```
+
+### Docker Compose Configuration
+
+The service runs on the `coffeedoor-network` external network:
+
+```yaml
+services:
+  menu-microservice:
+    build: .
+    ports:
+      - "5001:5001"
+    environment:
+      - TRANSPORT_URL=0.0.0.0:5001
+      - DATABASE_URL=postgresql://...
+    networks:
+      - coffeedoor-network
+```
+
+### Dockerfile Features
+
+- Multi-stage build for optimized image size
+- Node 24-Alpine base image
+- Production dependencies only in final image
+- Prisma client generated at build time
+
+## Testing
+
+```bash
+# Unit tests
+npm run test
+
+# End-to-end tests
+npm run test:e2e
+
+# Test coverage report
+npm run test:cov
+
+# Watch mode
+npm run test:watch
+```
+
+## Project Structure
+
+```
+menu-microservice/
+├── src/
+│   ├── main.ts                      # Application bootstrap
+│   ├── app.module.ts                # Root module
+│   ├── menu-category/               # Menu category module
+│   │   ├── menu-category.controller.ts
+│   │   ├── menu-category.service.ts
+│   │   ├── menu-category.module.ts
+│   │   └── dto/                     # Data transfer objects
+│   ├── menu-item/                   # Menu item module
+│   │   ├── menu-item.controller.ts
+│   │   ├── menu-item.service.ts
+│   │   ├── menu-item.module.ts
+│   │   └── dto/
+│   ├── health-check/                # Health check module
+│   │   ├── health-check.controller.ts
+│   │   └── health-check.module.ts
+│   ├── prisma/                      # Database service
+│   │   ├── prisma.service.ts
+│   │   └── prisma.module.ts
+│   ├── utils/                       # Shared utilities
+│   │   ├── errors/                  # Custom error classes
+│   │   ├── filters/                 # Exception filters
+│   │   └── validateEnv.ts           # Environment validation
+│   └── generated-types/             # Auto-generated proto types
+├── proto/                           # Protocol Buffer definitions
+│   ├── menu-category.proto
+│   ├── menu-item.proto
+│   └── health-check.proto
+├── prisma/
+│   ├── schema.prisma                # Database schema
+│   └── migrations/                  # Database migrations
+├── test/                            # E2E tests
+├── Dockerfile
+├── docker-compose.yml
+└── package.json
+```
+
+## Error Handling
+
+The service uses standardized gRPC error codes:
+
+| Code | Usage |
+|------|-------|
+| `NOT_FOUND` | Resource doesn't exist |
+| `ALREADY_EXISTS` | Duplicate resource |
+| `INVALID_ARGUMENT` | Invalid input data |
+| `INTERNAL` | Server-side error |
+
+## Network Configuration
+
+- **gRPC Port**: 5001
+- **Network**: `coffeedoor-network` (external Docker network)
+- **Database Port**: 5432 (PostgreSQL)
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is part of the CoffeeDoor microservices ecosystem.
