@@ -55,7 +55,6 @@ export interface UpdateMenuItemRequest {
   price?: string | null | undefined;
   imageUrl?: string | null | undefined;
   isAvailable?: boolean | null | undefined;
-  menuCategory: Id | null;
 }
 
 /** Request message for changing the position of a menu item. */

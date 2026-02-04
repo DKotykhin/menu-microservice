@@ -28,25 +28,30 @@ The Menu Microservice provides:
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Menu Microservice                         │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │ MenuCategory    │  │ MenuItem        │  │ HealthCheck │ │
-│  │ Controller      │  │ Controller      │  │ Controller  │ │
-│  └────────┬────────┘  └────────┬────────┘  └──────┬──────┘ │
-│           │                    │                   │        │
-│  ┌────────▼────────┐  ┌────────▼────────┐         │        │
-│  │ MenuCategory    │  │ MenuItem        │         │        │
-│  │ Service         │  │ Service         │         │        │
-│  └────────┬────────┘  └────────┬────────┘         │        │
-│           │                    │                   │        │
-│           └──────────┬─────────┴───────────────────┘        │
-│                      │                                      │
-│             ┌────────▼────────┐                             │
-│             │  Prisma Service │                             │
-│             └────────┬────────┘                             │
-└──────────────────────┼──────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                       Menu Microservice                          │
+├──────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────────┐  │ 
+│  │ MenuCategory    │  │ MenuItem        │  │ HealthCheck      │  │
+│  │ Controller      │  │ Controller      │  │ Controller       │  │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬─────────┘  │
+│           │                    │                    │            │
+│  ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼─────────┐  │
+│  │ MenuCategory    │  │ MenuItem        │  │ HealthCheck      │  │
+│  │ Service         │  │ Service         │  │ Service          │  │
+│  └────────┬────────┘  └────────┬────────┘  └────────-┬────────┘  │
+│           │                    │                     │           │
+│  ┌────────▼────────┐  ┌────────▼────────┐            │           │
+│  │ MenuCategory    │  │ MenuItem        │            │           │
+│  │ Repository      │  │ Repository      │            │           │
+│  └────────┬────────┘  └────────┬────────┘            │           │
+│           │                    │                     │           │
+│           └──────────┬─────────┴─────────────────────┘           │
+│                      │                                           │
+│             ┌────────▼────────┐                                  │
+│             │  Prisma Service │                                  │
+│             └────────┬────────┘                                  │
+└──────────────────────┼─────────────────────────────────────-─────┘
                        │
               ┌────────▼────────┐
               │   PostgreSQL    │
@@ -256,7 +261,22 @@ npm run test:cov
 
 # Watch mode
 npm run test:watch
+
+# Run specific module tests
+npm test -- --testPathPattern="menu-item"
+npm test -- --testPathPattern="menu-category"
+npm test -- --testPathPattern="health-check"
 ```
+
+### Test Structure
+
+Each module follows a layered testing approach:
+
+| Layer | Test File | Description |
+|-------|-----------|-------------|
+| Controller | `*.controller.spec.ts` | Tests gRPC method routing and request handling |
+| Service | `*.service.spec.ts` | Tests business logic and error handling |
+| Repository | `*.repository.spec.ts` | Tests database operations with mocked Prisma |
 
 ## Project Structure
 
@@ -268,23 +288,40 @@ menu-microservice/
 │   ├── menu-category/               # Menu category module
 │   │   ├── menu-category.controller.ts
 │   │   ├── menu-category.service.ts
+│   │   ├── menu-category.repository.ts
 │   │   ├── menu-category.module.ts
-│   │   └── dto/                     # Data transfer objects
+│   │   └── tests/                   # Unit tests
+│   │       ├── menu-category.controller.spec.ts
+│   │       ├── menu-category.service.spec.ts
+│   │       └── menu-category.repository.spec.ts
 │   ├── menu-item/                   # Menu item module
 │   │   ├── menu-item.controller.ts
 │   │   ├── menu-item.service.ts
+│   │   ├── menu-item.repository.ts
 │   │   ├── menu-item.module.ts
-│   │   └── dto/
+│   │   └── tests/                   # Unit tests
+│   │       ├── menu-item.controller.spec.ts
+│   │       ├── menu-item.service.spec.ts
+│   │       └── menu-item.repository.spec.ts
 │   ├── health-check/                # Health check module
 │   │   ├── health-check.controller.ts
-│   │   └── health-check.module.ts
+│   │   ├── health-check.service.ts
+│   │   ├── health-check.module.ts
+│   │   └── tests/                   # Unit tests
+│   │       ├── health-check.controller.spec.ts
+│   │       └── health-check.service.spec.ts
 │   ├── prisma/                      # Database service
 │   │   ├── prisma.service.ts
 │   │   └── prisma.module.ts
 │   ├── utils/                       # Shared utilities
 │   │   ├── errors/                  # Custom error classes
+│   │   │   ├── app-error.ts
+│   │   │   └── rpc-error-code.enum.ts
 │   │   ├── filters/                 # Exception filters
-│   │   └── validateEnv.ts           # Environment validation
+│   │   │   └── grpc-exception.filter.ts
+│   │   ├── validators/              # Validation utilities
+│   │   │   └── env-validator.ts
+│   │   └── env.dto.ts               # Environment DTO
 │   └── generated-types/             # Auto-generated proto types
 ├── proto/                           # Protocol Buffer definitions
 │   ├── menu-category.proto
