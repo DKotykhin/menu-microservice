@@ -68,12 +68,18 @@ export class MenuItemService {
   async updateMenuItem(data: UpdateMenuItemRequest): Promise<MenuItem> {
     this.logger.log(`Updating menu item with id: ${data.id}`);
     try {
+      const existingItem = await this.menuItemRepository.getMenuItemById(data.id);
+      if (!existingItem) {
+        this.logger.warn(`Menu item with id ${data.id} not found`);
+        throw AppError.notFound(`Menu item with id ${data.id} not found`);
+      }
       return await this.menuItemRepository.updateMenuItem(data);
     } catch (error) {
       this.logger.error(
         `Failed to update menu item with id: ${data.id}`,
         error instanceof Error ? error.message : error,
       );
+      if (error instanceof AppError) throw error;
       throw AppError.internalServerError('Failed to update menu item');
     }
   }
@@ -114,6 +120,10 @@ export class MenuItemService {
       if (!itemToUpdate) {
         this.logger.warn(`Menu item with ID ${id} not found`);
         throw AppError.notFound('Menu item not found');
+      }
+      if (itemToUpdate.position === position) {
+        this.logger.log(`Menu item with ID ${id} is already at position ${position}`);
+        return itemToUpdate; // No change needed
       }
 
       // Fetch all items in the same category

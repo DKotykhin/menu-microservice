@@ -95,11 +95,17 @@ export class MenuCategoryService {
   async updateMenuCategory(data: UpdateMenuCategoryRequest): Promise<MenuCategory> {
     this.logger.log(`Updating menu category with title: ${data.title}`);
     try {
+      const existingCategory = await this.menuCategoryRepository.getMenuCategoryById(data.id);
+      if (!existingCategory) {
+        this.logger.warn(`Menu category with id ${data.id} not found`);
+        throw AppError.notFound(`Menu category with id ${data.id} not found`);
+      }
       const updatedCategory = await this.menuCategoryRepository.updateMenuCategory(data);
       this.logger.log(`Menu category with title ${data.title} updated successfully`);
       return updatedCategory;
     } catch (error) {
       this.logger.error(`Error updating menu category: ${error instanceof Error ? error.message : error}`);
+      if (error instanceof AppError) throw error;
       throw AppError.internalServerError('Failed to update menu category');
     }
   }
@@ -113,6 +119,10 @@ export class MenuCategoryService {
       if (!categoryToUpdate) {
         this.logger.warn(`Menu category with ID ${id} not found`);
         throw AppError.notFound('Menu category not found');
+      }
+      if (categoryToUpdate.position === position) {
+        this.logger.log(`Menu category with ID ${id} is already at position ${position}`);
+        return categoryToUpdate; // No change needed
       }
 
       // Fetch all categories in the same language
