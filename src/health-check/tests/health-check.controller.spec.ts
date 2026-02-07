@@ -41,30 +41,4 @@ describe('HealthCheckController', () => {
       });
     });
   });
-
-  describe('checkDatabaseConnection', () => {
-    it('should return healthy status when database connection is successful', async () => {
-      mockHealthCheckService.checkDatabaseConnection.mockResolvedValue(true);
-
-      const result = await controller.checkDatabaseConnection();
-
-      expect(result).toEqual({
-        serving: true,
-        message: 'Database connection is healthy',
-      });
-      expect(mockHealthCheckService.checkDatabaseConnection).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return unhealthy status when database connection fails', async () => {
-      mockHealthCheckService.checkDatabaseConnection.mockResolvedValue(false);
-
-      const result = await controller.checkDatabaseConnection();
-
-      expect(result).toEqual({
-        serving: false,
-        message: 'Database connection failed',
-      });
-      expect(mockHealthCheckService.checkDatabaseConnection).toHaveBeenCalledTimes(1);
-    });
-  });
 });

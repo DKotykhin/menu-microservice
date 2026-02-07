@@ -16,8 +16,8 @@ import type { Language } from 'prisma/generated-types/enums';
 
 @Controller()
 export class MenuCategoryController {
+  private readonly logger = new Logger(MenuCategoryController.name);
   constructor(private readonly menuCategoryService: MenuCategoryService) {}
-  protected readonly logger = new Logger(MenuCategoryController.name);
 
   @GrpcMethod(MENU_CATEGORY_SERVICE_NAME, 'GetFullMenuByLanguage')
   async getFullMenuByLanguage({ language }: { language: Language }): Promise<MenuCategoryListWithItems> {

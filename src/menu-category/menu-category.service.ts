@@ -15,8 +15,8 @@ import type { Language } from 'prisma/generated-types/enums';
 
 @Injectable()
 export class MenuCategoryService {
+  private readonly logger = new Logger(MenuCategoryService.name);
   constructor(private readonly menuCategoryRepository: MenuCategoryRepository) {}
-  protected readonly logger = new Logger(MenuCategoryService.name);
 
   async getFullMenuByLanguage(language: Language): Promise<MenuCategoryWithItems[]> {
     this.logger.log(`Fetching full menu for language: ${language}`);

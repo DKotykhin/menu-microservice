@@ -14,8 +14,8 @@ import type {
 
 @Injectable()
 export class MenuItemService {
+  private readonly logger = new Logger(MenuItemService.name);
   constructor(private readonly menuItemRepository: MenuItemRepository) {}
-  protected readonly logger = new Logger(MenuItemService.name);
 
   async getMenuItemById(id: string): Promise<MenuItem> {
     this.logger.log(`Fetching menu item by id: ${id}`);

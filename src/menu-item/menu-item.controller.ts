@@ -13,8 +13,8 @@ import { MenuItemService } from './menu-item.service';
 
 @Controller()
 export class MenuItemController {
+  private readonly logger = new Logger(MenuItemController.name);
   constructor(private readonly menuItemService: MenuItemService) {}
-  protected readonly logger = new Logger(MenuItemController.name);
 
   @GrpcMethod(MENU_ITEM_SERVICE_NAME, 'GetMenuItemById')
   async getMenuItemById(data: { id: string }): Promise<MenuItem> {

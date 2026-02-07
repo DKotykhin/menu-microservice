@@ -12,8 +12,8 @@ import type {
 
 @Injectable()
 export class MenuCategoryRepository {
+  private readonly logger = new Logger(MenuCategoryRepository.name);
   constructor(private readonly prisma: PrismaService) {}
-  protected readonly logger = new Logger(MenuCategoryRepository.name);
 
   // Fetch menu categories along with their items for a specific language
   async getMenuCategoriesWithItemsByLanguage(language: Language): Promise<MenuCategoryWithItems[]> {

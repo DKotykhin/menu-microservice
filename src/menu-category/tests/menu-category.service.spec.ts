@@ -196,17 +196,31 @@ describe('MenuCategoryService', () => {
       const updateData = { id: '1', title: 'Updated Title' };
       const mockUpdatedCategory = { id: '1', title: 'Updated Title' };
 
+      mockRepository.getMenuCategoryById.mockResolvedValue({ id: '1', title: 'Old Title' });
       mockRepository.updateMenuCategory.mockResolvedValue(mockUpdatedCategory);
 
       const result = await service.updateMenuCategory(updateData);
 
+      expect(mockRepository.getMenuCategoryById).toHaveBeenCalledWith('1');
       expect(mockRepository.updateMenuCategory).toHaveBeenCalledWith(updateData);
       expect(result).toEqual(mockUpdatedCategory);
+    });
+
+    it('should throw AppError.notFound when category not found', async () => {
+      const updateData = { id: 'non-existent', title: 'Updated Title' };
+
+      mockRepository.getMenuCategoryById.mockResolvedValue(null);
+
+      await expect(service.updateMenuCategory(updateData)).rejects.toThrow(AppError);
+      await expect(service.updateMenuCategory(updateData)).rejects.toMatchObject({
+        error: { message: 'Menu category with id non-existent not found' },
+      });
     });
 
     it('should throw AppError.internalServerError on error', async () => {
       const updateData = { id: '1', title: 'Updated Title' };
 
+      mockRepository.getMenuCategoryById.mockResolvedValue({ id: '1', title: 'Old Title' });
       mockRepository.updateMenuCategory.mockRejectedValue(new Error('DB error'));
 
       await expect(service.updateMenuCategory(updateData)).rejects.toThrow(AppError);

@@ -167,6 +167,7 @@ describe('MenuItemService', () => {
       const updateData = { id: '1', title: 'Updated Title' };
       const mockUpdatedItem = { id: '1', title: 'Updated Title' };
 
+      mockRepository.getMenuItemById.mockResolvedValue(mockUpdatedItem);
       mockRepository.updateMenuItem.mockResolvedValue(mockUpdatedItem);
 
       const result = await service.updateMenuItem(updateData);
@@ -186,6 +187,7 @@ describe('MenuItemService', () => {
       };
       const mockUpdatedItem = { ...updateData };
 
+      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', title: 'Old Title' });
       mockRepository.updateMenuItem.mockResolvedValue(mockUpdatedItem);
 
       const result = await service.updateMenuItem(updateData);
@@ -194,9 +196,21 @@ describe('MenuItemService', () => {
       expect(result).toEqual(mockUpdatedItem);
     });
 
+    it('should throw AppError.notFound when item not found', async () => {
+      const updateData = { id: 'non-existent', title: 'Updated Title' };
+
+      mockRepository.getMenuItemById.mockResolvedValue(null);
+
+      await expect(service.updateMenuItem(updateData)).rejects.toThrow(AppError);
+      await expect(service.updateMenuItem(updateData)).rejects.toMatchObject({
+        error: { message: 'Menu item with id non-existent not found' },
+      });
+    });
+
     it('should throw AppError.internalServerError on error', async () => {
       const updateData = { id: '1', title: 'Updated Title' };
 
+      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', title: 'Old Title' });
       mockRepository.updateMenuItem.mockRejectedValue(new Error('DB error'));
 
       await expect(service.updateMenuItem(updateData)).rejects.toThrow(AppError);

@@ -8,8 +8,8 @@ import type { CreateMenuItemRequest, UpdateMenuItemRequest } from 'src/generated
 
 @Injectable()
 export class MenuItemRepository {
+  private readonly logger = new Logger(MenuItemRepository.name);
   constructor(private readonly prisma: PrismaService) {}
-  protected readonly logger = new Logger(MenuItemRepository.name);
 
   // Get a menu item by its ID
   async getMenuItemById(id: string): Promise<MenuItem | null> {
