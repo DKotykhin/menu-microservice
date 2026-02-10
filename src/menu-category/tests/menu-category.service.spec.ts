@@ -12,6 +12,7 @@ const mockRepository = {
   updateMenuCategory: jest.fn(),
   deleteMenuCategory: jest.fn(),
   changeMenuCategoryPosition: jest.fn(),
+  hasMenuItems: jest.fn(),
 };
 
 describe('MenuCategoryService', () => {
@@ -178,6 +179,20 @@ describe('MenuCategoryService', () => {
       expect(mockRepository.createMenuCategory).not.toHaveBeenCalled();
     });
 
+    it('should throw AppError.conflict on P2002 unique constraint violation', async () => {
+      const createData = { language: 'UA', title: 'New Category', description: 'Desc' };
+      const prismaError = new Error('Unique constraint failed');
+      Object.assign(prismaError, { code: 'P2002' });
+
+      mockRepository.getMenuCategoriesByLanguage.mockResolvedValue([]);
+      mockRepository.createMenuCategory.mockRejectedValue(prismaError);
+
+      await expect(service.createMenuCategory(createData)).rejects.toThrow(AppError);
+      await expect(service.createMenuCategory(createData)).rejects.toMatchObject({
+        error: { message: 'Menu category with title "New Category" already exists' },
+      });
+    });
+
     it('should throw AppError.internalServerError on unexpected error', async () => {
       const createData = { language: 'UA', title: 'New Category', description: 'Desc' };
 
@@ -279,6 +294,69 @@ describe('MenuCategoryService', () => {
       expect(result).toEqual(updatedCategory);
     });
 
+    it('should return category unchanged when position is the same', async () => {
+      const categoryToUpdate = { id: '1', title: 'Category 1', position: 2, language: 'UA' };
+
+      mockRepository.getMenuCategoryById.mockResolvedValue(categoryToUpdate);
+
+      const result = await service.changeMenuCategoryPosition({ id: '1', position: 2 });
+
+      expect(result).toEqual(categoryToUpdate);
+      expect(mockRepository.getMenuCategoriesByLanguage).not.toHaveBeenCalled();
+      expect(mockRepository.changeMenuCategoryPosition).not.toHaveBeenCalled();
+    });
+
+    it('should throw AppError.badRequest when position is out of bounds (too high)', async () => {
+      const categoryToUpdate = { id: '1', title: 'Category 1', position: 1, language: 'UA' };
+      const categories = [
+        { id: '1', title: 'Category 1', position: 1 },
+        { id: '2', title: 'Category 2', position: 2 },
+        { id: '3', title: 'Category 3', position: 3 },
+      ];
+
+      mockRepository.getMenuCategoryById.mockResolvedValue(categoryToUpdate);
+      mockRepository.getMenuCategoriesByLanguage.mockResolvedValue(categories);
+
+      await expect(service.changeMenuCategoryPosition({ id: '1', position: 5 })).rejects.toThrow(AppError);
+      await expect(service.changeMenuCategoryPosition({ id: '1', position: 5 })).rejects.toMatchObject({
+        error: { message: 'Position must be between 1 and 3' },
+      });
+      expect(mockRepository.changeMenuCategoryPosition).not.toHaveBeenCalled();
+    });
+
+    it('should throw AppError.badRequest when position is less than 1', async () => {
+      const categoryToUpdate = { id: '1', title: 'Category 1', position: 1, language: 'UA' };
+      const categories = [
+        { id: '1', title: 'Category 1', position: 1 },
+        { id: '2', title: 'Category 2', position: 2 },
+      ];
+
+      mockRepository.getMenuCategoryById.mockResolvedValue(categoryToUpdate);
+      mockRepository.getMenuCategoriesByLanguage.mockResolvedValue(categories);
+
+      await expect(service.changeMenuCategoryPosition({ id: '1', position: 0 })).rejects.toThrow(AppError);
+      await expect(service.changeMenuCategoryPosition({ id: '1', position: 0 })).rejects.toMatchObject({
+        error: { message: 'Position must be between 1 and 2' },
+      });
+    });
+
+    it('should throw AppError.notFound when repository returns null after update', async () => {
+      const categoryToUpdate = { id: '1', title: 'Category 1', position: 1, language: 'UA' };
+      const categories = [
+        { id: '1', title: 'Category 1', position: 1 },
+        { id: '2', title: 'Category 2', position: 2 },
+      ];
+
+      mockRepository.getMenuCategoryById.mockResolvedValue(categoryToUpdate);
+      mockRepository.getMenuCategoriesByLanguage.mockResolvedValue(categories);
+      mockRepository.changeMenuCategoryPosition.mockResolvedValue(null);
+
+      await expect(service.changeMenuCategoryPosition({ id: '1', position: 2 })).rejects.toThrow(AppError);
+      await expect(service.changeMenuCategoryPosition({ id: '1', position: 2 })).rejects.toMatchObject({
+        error: { message: 'Menu category not found after position update' },
+      });
+    });
+
     it('should throw AppError.notFound when category not found', async () => {
       mockRepository.getMenuCategoryById.mockResolvedValue(null);
 
@@ -311,6 +389,7 @@ describe('MenuCategoryService', () => {
       ];
 
       mockRepository.getMenuCategoryById.mockResolvedValue(categoryToDelete);
+      mockRepository.hasMenuItems.mockResolvedValue(false);
       mockRepository.getMenuCategoriesByLanguage.mockResolvedValue(categories);
       mockRepository.deleteMenuCategory.mockResolvedValue({ id: '1' });
 
@@ -331,6 +410,7 @@ describe('MenuCategoryService', () => {
       ];
 
       mockRepository.getMenuCategoryById.mockResolvedValue(categoryToDelete);
+      mockRepository.hasMenuItems.mockResolvedValue(false);
       mockRepository.getMenuCategoriesByLanguage.mockResolvedValue(categories);
       mockRepository.deleteMenuCategory.mockResolvedValue({ id: '1' });
 
@@ -349,10 +429,24 @@ describe('MenuCategoryService', () => {
       });
     });
 
+    it('should throw AppError.conflict when category has menu items', async () => {
+      const categoryToDelete = { id: '1', title: 'Category 1', position: 1, language: 'UA' };
+
+      mockRepository.getMenuCategoryById.mockResolvedValue(categoryToDelete);
+      mockRepository.hasMenuItems.mockResolvedValue(true);
+
+      await expect(service.deleteMenuCategory('1')).rejects.toThrow(AppError);
+      await expect(service.deleteMenuCategory('1')).rejects.toMatchObject({
+        error: { message: 'Cannot delete menu category that has menu items. Remove the items first.' },
+      });
+      expect(mockRepository.deleteMenuCategory).not.toHaveBeenCalled();
+    });
+
     it('should throw AppError.internalServerError on error', async () => {
       const categoryToDelete = { id: '1', title: 'Category 1', position: 1, language: 'UA' };
 
       mockRepository.getMenuCategoryById.mockResolvedValue(categoryToDelete);
+      mockRepository.hasMenuItems.mockResolvedValue(false);
       mockRepository.getMenuCategoriesByLanguage.mockRejectedValue(new Error('DB error'));
 
       await expect(service.deleteMenuCategory('1')).rejects.toThrow(AppError);

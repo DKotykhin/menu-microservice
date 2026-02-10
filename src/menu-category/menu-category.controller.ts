@@ -36,7 +36,7 @@ export class MenuCategoryController {
   }
 
   @GrpcMethod(MENU_CATEGORY_SERVICE_NAME, 'GetMenuCategoryById')
-  async getMenuCategoryById({ id }: { id: string }) {
+  async getMenuCategoryById({ id }: { id: string }): Promise<MenuCategory> {
     this.logger.log(`Received request for menu category with ID: ${id}`);
     const data = await this.menuCategoryService.getMenuCategoryById(id);
     this.logger.log(`Returning menu category with ID: ${id}`);

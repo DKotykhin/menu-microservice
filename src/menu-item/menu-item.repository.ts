@@ -57,10 +57,10 @@ export class MenuItemRepository {
       where: { id: data.id },
       data: {
         ...(data.language && { language: data.language as Language }),
-        ...(data.title && { title: data.title }),
-        ...(data.description && { description: data.description }),
-        ...(data.price && { price: data.price }),
-        ...(data.imageUrl && { imageUrl: data.imageUrl }),
+        ...(data.title !== undefined && data.title !== null && { title: data.title }),
+        ...(data.description !== undefined && data.description !== null && { description: data.description }),
+        ...(data.price !== undefined && data.price !== null && { price: data.price }),
+        ...(data.imageUrl !== undefined && data.imageUrl !== null && { imageUrl: data.imageUrl }),
         ...(data.isAvailable !== undefined && data.isAvailable !== null && { isAvailable: data.isAvailable }),
       },
     });
@@ -91,7 +91,7 @@ export class MenuItemRepository {
   async changeMenuItemPosition(
     id: string,
     positionUpdates: Array<{ id: string; position: number }>,
-  ): Promise<MenuItem> {
+  ): Promise<MenuItem | null> {
     this.logger.log(`Changing position of menu item with ID: ${id}`);
     return await this.prisma.$transaction(async (prisma) => {
       for (const update of positionUpdates) {
@@ -100,7 +100,7 @@ export class MenuItemRepository {
           data: { position: update.position },
         });
       }
-      return (await prisma.menuItem.findUnique({ where: { id } })) as MenuItem;
+      return await prisma.menuItem.findUnique({ where: { id } });
     });
   }
 }

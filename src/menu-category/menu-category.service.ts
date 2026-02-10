@@ -51,7 +51,7 @@ export class MenuCategoryService {
     }
   }
 
-  async getMenuCategoryById(id: string): Promise<MenuCategory | null> {
+  async getMenuCategoryById(id: string): Promise<MenuCategory> {
     this.logger.log(`Fetching menu category by ID: ${id}`);
     try {
       const category = await this.menuCategoryRepository.getMenuCategoryById(id);
@@ -71,14 +71,16 @@ export class MenuCategoryService {
 
   async createMenuCategory(data: CreateMenuCategoryRequest): Promise<MenuCategory> {
     this.logger.log(`Creating new menu category: ${data.title}`);
-    const existingCategories = await this.menuCategoryRepository.getMenuCategoriesByLanguage(data.language as Language);
-    if (existingCategories.some((category) => category.title === data.title)) {
-      this.logger.warn(`Menu category with title "${data.title}" already exists`);
-      throw AppError.conflict(`Menu category with title "${data.title}" already exists`);
-    }
-    const lastPosition =
-      existingCategories.length > 0 ? Math.max(...existingCategories.map((category) => category.position)) : 0;
     try {
+      const existingCategories = await this.menuCategoryRepository.getMenuCategoriesByLanguage(
+        data.language as Language,
+      );
+      if (existingCategories.some((category) => category.title === data.title)) {
+        this.logger.warn(`Menu category with title "${data.title}" already exists`);
+        throw AppError.conflict(`Menu category with title "${data.title}" already exists`);
+      }
+      const lastPosition =
+        existingCategories.length > 0 ? Math.max(...existingCategories.map((category) => category.position)) : 0;
       const newCategory = await this.menuCategoryRepository.createMenuCategory({
         data,
         lastPosition,
@@ -88,6 +90,9 @@ export class MenuCategoryService {
     } catch (error) {
       this.logger.error(`Error creating menu category: ${error instanceof Error ? error.message : error}`);
       if (error instanceof AppError) throw error;
+      if (error instanceof Error && 'code' in error && (error as Record<string, unknown>).code === 'P2002') {
+        throw AppError.conflict(`Menu category with title "${data.title}" already exists`);
+      }
       throw AppError.internalServerError('Failed to create menu category');
     }
   }
@@ -128,11 +133,22 @@ export class MenuCategoryService {
       // Fetch all categories in the same language
       const categories = await this.menuCategoryRepository.getMenuCategoriesByLanguage(categoryToUpdate.language);
 
+      // Validate position bounds
+      if (position < 1 || position > categories.length) {
+        this.logger.warn(`Invalid position ${position}. Must be between 1 and ${categories.length}`);
+        throw AppError.badRequest(`Position must be between 1 and ${categories.length}`);
+      }
+
       // Calculate position updates (business logic)
       const positionUpdates = this.calculatePositionUpdates(categories, categoryToUpdate, position);
 
       // Delegate database transaction to repository
       const updatedCategory = await this.menuCategoryRepository.changeMenuCategoryPosition(id, positionUpdates);
+
+      if (!updatedCategory) {
+        this.logger.warn(`Menu category with ID ${id} not found after position update`);
+        throw AppError.notFound('Menu category not found after position update');
+      }
 
       this.logger.log(`Menu category position updated successfully to ${position}`);
       return updatedCategory;
@@ -181,6 +197,13 @@ export class MenuCategoryService {
       if (!categoryToDelete) {
         this.logger.warn(`Menu category with ID ${id} not found`);
         throw AppError.notFound(`Menu category with ID ${id} not found`);
+      }
+
+      // Check for associated menu items
+      const hasItems = await this.menuCategoryRepository.hasMenuItems(id);
+      if (hasItems) {
+        this.logger.warn(`Cannot delete menu category with ID ${id}: it has associated menu items`);
+        throw AppError.conflict('Cannot delete menu category that has menu items. Remove the items first.');
       }
 
       // Fetch all categories in the same language

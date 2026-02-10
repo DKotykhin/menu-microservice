@@ -75,11 +75,19 @@ export class MenuCategoryRepository {
       data: {
         ...(data.language && { language: data.language as Language }),
         ...(data.title && { title: data.title }),
-        ...(data.description && { description: data.description }),
+        ...(data.description !== undefined && data.description !== null && { description: data.description }),
         ...(data.isAvailable !== undefined && data.isAvailable !== null && { isAvailable: data.isAvailable }),
-        ...(data.imageUrl && { imageUrl: data.imageUrl }),
+        ...(data.imageUrl !== undefined && data.imageUrl !== null && { imageUrl: data.imageUrl }),
       },
     });
+  }
+
+  // Check if a menu category has associated menu items
+  async hasMenuItems(categoryId: string): Promise<boolean> {
+    const count = await this.prisma.menuItem.count({
+      where: { categoryId },
+    });
+    return count > 0;
   }
 
   // Delete a menu category by its ID and update positions of remaining categories
@@ -95,12 +103,14 @@ export class MenuCategoryRepository {
       });
 
       // Update positions of remaining categories
-      for (const update of positionUpdates) {
-        await prisma.menuCategory.update({
-          where: { id: update.id },
-          data: { position: update.position },
-        });
-      }
+      await Promise.all(
+        positionUpdates.map((update) =>
+          prisma.menuCategory.update({
+            where: { id: update.id },
+            data: { position: update.position },
+          }),
+        ),
+      );
 
       return deletedCategory;
     });
@@ -110,7 +120,7 @@ export class MenuCategoryRepository {
   async changeMenuCategoryPosition(
     id: string,
     positionUpdates: Array<{ id: string; position: number }>,
-  ): Promise<MenuCategory> {
+  ): Promise<MenuCategory | null> {
     this.logger.log(`Updating positions for ${positionUpdates.length} categories`);
     return await this.prisma.$transaction(async (prisma) => {
       await Promise.all(
@@ -122,7 +132,7 @@ export class MenuCategoryRepository {
         ),
       );
 
-      return prisma.menuCategory.findUnique({ where: { id } }) as Promise<MenuCategory>;
+      return await prisma.menuCategory.findUnique({ where: { id } });
     });
   }
 }

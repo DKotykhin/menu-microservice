@@ -31,7 +31,7 @@ export class MenuItemService {
     } catch (error) {
       this.logger.error(`Failed to get menu item by id: ${id}`, error instanceof Error ? error.message : error);
       if (error instanceof AppError) throw error;
-      throw AppError.internalServerError('Failed to fetch full menu');
+      throw AppError.internalServerError('Failed to fetch menu item by id');
     }
   }
 
@@ -46,6 +46,7 @@ export class MenuItemService {
         `Failed to get menu items by category id: ${categoryId}`,
         error instanceof Error ? error.message : error,
       );
+      if (error instanceof AppError) throw error;
       throw AppError.internalServerError('Failed to fetch menu items by category');
     }
   }
@@ -53,7 +54,11 @@ export class MenuItemService {
   async createMenuItem(data: CreateMenuItemRequest): Promise<MenuItem> {
     this.logger.log(`Creating menu item with title: ${data.title}`);
     try {
-      const lastItems = await this.menuItemRepository.getMenuItemsByCategoryId(data.menuCategory?.id as string);
+      if (!data.menuCategory || !data.menuCategory.id) {
+        this.logger.warn('Menu category is required to create a menu item');
+        throw AppError.badRequest('Menu category is required');
+      }
+      const lastItems = await this.menuItemRepository.getMenuItemsByCategoryId(data.menuCategory.id);
       const lastPosition = lastItems.reduce((max, item) => (item.position > max ? item.position : max), 0);
       return await this.menuItemRepository.createMenuItem({ data, lastPosition });
     } catch (error) {
@@ -61,6 +66,7 @@ export class MenuItemService {
         `Failed to create menu item with title: ${data.title}`,
         error instanceof Error ? error.message : error,
       );
+      if (error instanceof AppError) throw error;
       throw AppError.internalServerError('Failed to create menu item');
     }
   }
@@ -129,11 +135,21 @@ export class MenuItemService {
       // Fetch all items in the same category
       const items = await this.menuItemRepository.getMenuItemsByCategoryId(itemToUpdate.categoryId);
 
+      // Validate position bounds
+      if (position < 1 || position > items.length) {
+        this.logger.warn(`Invalid position ${position}. Must be between 1 and ${items.length}`);
+        throw AppError.badRequest(`Position must be between 1 and ${items.length}`);
+      }
+
       // Calculate position updates (business logic)
       const positionUpdates = this.calculatePositionUpdates(items, itemToUpdate, position);
 
       // Delegate database transaction to repository
       const updatedItem = await this.menuItemRepository.changeMenuItemPosition(id, positionUpdates);
+      if (!updatedItem) {
+        this.logger.warn(`Menu item with ID ${id} not found after position change`);
+        throw AppError.notFound('Menu item not found after position change');
+      }
 
       this.logger.log(`Menu item position updated successfully to ${position}`);
       return updatedItem;

@@ -26,6 +26,7 @@ model MenuCategory {
   updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
   menuItems   MenuItem[] @relation("CategoryToMenuItems")
 
+  @@unique([language, title])
   @@map("menu_categories")
 }
 

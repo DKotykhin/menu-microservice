@@ -266,6 +266,7 @@ export type MenuCategoryOrderByWithRelationInput = {
 
 export type MenuCategoryWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  language_title?: Prisma.MenuCategoryLanguageTitleCompoundUniqueInput
   AND?: Prisma.MenuCategoryWhereInput | Prisma.MenuCategoryWhereInput[]
   OR?: Prisma.MenuCategoryWhereInput[]
   NOT?: Prisma.MenuCategoryWhereInput | Prisma.MenuCategoryWhereInput[]
@@ -278,7 +279,7 @@ export type MenuCategoryWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"MenuCategory"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MenuCategory"> | Date | string
   menuItems?: Prisma.MenuItemListRelationFilter
-}, "id">
+}, "id" | "language_title">
 
 export type MenuCategoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -398,6 +399,11 @@ export type MenuCategoryUncheckedUpdateManyInput = {
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type MenuCategoryLanguageTitleCompoundUniqueInput = {
+  language: $Enums.Language
+  title: string
 }
 
 export type MenuCategoryCountOrderByAggregateInput = {

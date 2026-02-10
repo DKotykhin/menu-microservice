@@ -55,7 +55,7 @@ describe('MenuItemService', () => {
 
       await expect(service.getMenuItemById('1')).rejects.toThrow(AppError);
       await expect(service.getMenuItemById('1')).rejects.toMatchObject({
-        error: { message: 'Failed to fetch full menu' },
+        error: { message: 'Failed to fetch menu item by id' },
       });
     });
   });
