@@ -1,4 +1,4 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 
 import { MENU_CATEGORY_SERVICE_NAME } from 'src/generated-types/menu-category';
@@ -17,6 +17,8 @@ import type {
   UpdateMenuCategoryTranslationRequest,
 } from 'src/generated-types/menu-category';
 import type { Language } from 'prisma/generated-types/enums';
+import { CacheTTL } from '@nestjs/cache-manager';
+import { GrpcCacheInterceptor } from 'src/utils/interceptors/grpc-cache.interceptor';
 
 @Controller()
 export class MenuCategoryController {
@@ -26,6 +28,8 @@ export class MenuCategoryController {
   // ---- Menu Category Retrieval ---- //
 
   @GrpcMethod(MENU_CATEGORY_SERVICE_NAME, 'GetFullMenuByLanguage')
+  @UseInterceptors(GrpcCacheInterceptor)
+  @CacheTTL(60 * 1000) // Cache for 60 seconds
   async getFullMenuByLanguage({ language }: { language: Language }): Promise<MenuCategoryListWithItems> {
     this.logger.log(`Received request for full menu with language: ${language}`);
     const { data } = await this.menuCategoryService.getFullMenuByLanguage(language);
