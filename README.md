@@ -88,17 +88,43 @@ The Menu Microservice provides:
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Auto-generated primary key |
-| `language` | Enum | EN, UA, or RU |
-| `title` | String | Category name |
-| `description` | String? | Optional description |
+| `slug` | String | URL-friendly identifier |
 | `position` | Integer | Display order |
-| `imageUrl` | String? | Category image URL |
 | `isAvailable` | Boolean | Availability flag (default: true) |
+| `imageUrl` | String? | Category image URL |
 | `createdAt` | DateTime | Auto-generated |
 | `updatedAt` | DateTime | Auto-updated |
 | `menuItems` | MenuItem[] | Related items |
+| `menuCategoryTranslations` | MenuCategoryTranslation[] | Related translations |
+
+### MenuCategoryTranslation
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | Auto-generated primary key |
+| `language` | Enum | EN, UA, or RU |
+| `title` | String | Category name |
+| `description` | String? | Optional description |
+| `categoryId` | UUID | Foreign key to MenuCategory |
+
+> Unique constraint: `[language, categoryId]`
 
 ### MenuItem
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | Auto-generated primary key |
+| `slug` | String | URL-friendly identifier |
+| `price` | String | Price (string for currency precision) |
+| `position` | Integer | Display order within category |
+| `isAvailable` | Boolean | Availability flag (default: true) |
+| `imageUrl` | String? | Item image URL |
+| `createdAt` | DateTime | Auto-generated |
+| `updatedAt` | DateTime | Auto-updated |
+| `categoryId` | UUID | Foreign key to MenuCategory |
+| `menuItemTranslations` | MenuItemTranslation[] | Related translations |
+
+### MenuItemTranslation
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -106,13 +132,9 @@ The Menu Microservice provides:
 | `language` | Enum | EN, UA, or RU |
 | `title` | String | Item name |
 | `description` | String? | Optional description |
-| `price` | String | Price (string for currency precision) |
-| `position` | Integer | Display order within category |
-| `imageUrl` | String? | Item image URL |
-| `isAvailable` | Boolean | Availability flag (default: true) |
-| `createdAt` | DateTime | Auto-generated |
-| `updatedAt` | DateTime | Auto-updated |
-| `categoryId` | UUID | Foreign key to MenuCategory |
+| `itemId` | UUID | Foreign key to MenuItem |
+
+> Unique constraint: `[language, itemId]`
 
 ## gRPC API
 
@@ -120,31 +142,37 @@ The Menu Microservice provides:
 
 | Method | Request | Response | Description |
 |--------|---------|----------|-------------|
-| `GetFullMenuByLanguage` | `Language` | `MenuCategoryListWithItems` | Get all categories with items |
-| `GetMenuCategoriesByLanguage` | `Language` | `MenuCategoryList` | Get categories without items |
-| `GetMenuCategoryById` | `Id` | `MenuCategory` | Get single category |
+| `GetFullMenuByLanguage` | `Language` | `MenuCategoryListWithItems` | Get all categories with translations and items |
+| `GetMenuCategoriesByLanguage` | `Language` | `MenuCategoryListWithTranslation` | Get categories with translations (no items) |
+| `GetMenuCategoryById` | `Id` | `MenuCategoryWithTranslation` | Get single category with translations |
 | `CreateMenuCategory` | `CreateMenuCategoryRequest` | `MenuCategory` | Create new category |
 | `UpdateMenuCategory` | `UpdateMenuCategoryRequest` | `MenuCategory` | Update existing category |
 | `ChangeMenuCategoryPosition` | `ChangeMenuCategoryPositionRequest` | `MenuCategory` | Reorder category |
 | `DeleteMenuCategory` | `Id` | `StatusResponse` | Delete category |
+| `CreateMenuCategoryTranslation` | `CreateMenuCategoryTranslationRequest` | `MenuCategoryTranslation` | Create category translation |
+| `UpdateMenuCategoryTranslation` | `UpdateMenuCategoryTranslationRequest` | `MenuCategoryTranslation` | Update category translation |
+| `DeleteMenuCategoryTranslation` | `Id` | `StatusResponse` | Delete category translation |
 
 ### MenuItemService
 
 | Method | Request | Response | Description |
 |--------|---------|----------|-------------|
-| `GetMenuItemById` | `Id` | `MenuItem` | Get single item |
-| `GetMenuItemsByCategoryId` | `Id` | `MenuItemList` | Get items by category |
+| `GetMenuItemsByCategoryId` | `Id` | `MenuItemListWithTranslation` | Get items with translations by category |
+| `GetMenuItemById` | `Id` | `MenuItemWithTranslation` | Get single item with translations |
 | `CreateMenuItem` | `CreateMenuItemRequest` | `MenuItem` | Create new item |
 | `UpdateMenuItem` | `UpdateMenuItemRequest` | `MenuItem` | Update existing item |
 | `ChangeMenuItemPosition` | `ChangeMenuItemPositionRequest` | `MenuItem` | Reorder item |
 | `DeleteMenuItem` | `Id` | `StatusResponse` | Delete item |
+| `CreateMenuItemTranslation` | `CreateMenuItemTranslationRequest` | `MenuItemTranslation` | Create item translation |
+| `UpdateMenuItemTranslation` | `UpdateMenuItemTranslationRequest` | `MenuItemTranslation` | Update item translation |
+| `DeleteMenuItemTranslation` | `Id` | `StatusResponse` | Delete item translation |
 
 ### HealthCheckService
 
 | Method | Request | Response | Description |
 |--------|---------|----------|-------------|
 | `CheckAppHealth` | `Empty` | `HealthCheckResponse` | Service availability |
-| `CheckDatabaseConnection` | `Empty` | `HealthCheckResponse` | Database connectivity |
+| `CheckAppConnections` | `Empty` | `ReadinessResponse` | Dependency readiness with per-service health details |
 
 ## Environment Configuration
 

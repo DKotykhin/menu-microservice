@@ -11,6 +11,9 @@ const mockRepository = {
   updateMenuItem: jest.fn(),
   deleteMenuItem: jest.fn(),
   changeMenuItemPosition: jest.fn(),
+  createMenuItemTranslation: jest.fn(),
+  updateMenuItemTranslation: jest.fn(),
+  deleteMenuItemTranslation: jest.fn(),
 };
 
 describe('MenuItemService', () => {
@@ -31,14 +34,33 @@ describe('MenuItemService', () => {
   });
 
   describe('getMenuItemById', () => {
-    it('should return a menu item by ID', async () => {
-      const mockMenuItem = { id: '1', title: 'Espresso', price: '3.5' };
-      mockRepository.getMenuItemById.mockResolvedValue(mockMenuItem);
+    it('should return a mapped menu item by ID', async () => {
+      const mockRepoItem = {
+        id: '1',
+        slug: 'espresso',
+        price: '3.50',
+        imageUrl: null,
+        isAvailable: true,
+        position: 1,
+        categoryId: 'cat-1',
+        menuItemTranslations: [
+          { id: 't1', title: 'Espresso', description: 'Strong coffee', language: 'EN', itemId: '1' },
+        ],
+      };
+      mockRepository.getMenuItemById.mockResolvedValue(mockRepoItem);
 
       const result = await service.getMenuItemById('1');
 
       expect(mockRepository.getMenuItemById).toHaveBeenCalledWith('1');
-      expect(result).toEqual(mockMenuItem);
+      expect(result).toEqual({
+        id: '1',
+        slug: 'espresso',
+        price: '3.50',
+        imageUrl: null,
+        isAvailable: true,
+        position: 1,
+        translations: [{ id: 't1', title: 'Espresso', description: 'Strong coffee', language: 'EN', itemId: '1' }],
+      });
     });
 
     it('should throw AppError.notFound when menu item not found', async () => {
@@ -61,17 +83,56 @@ describe('MenuItemService', () => {
   });
 
   describe('getMenuItemsByCategoryId', () => {
-    it('should return menu items for a category', async () => {
-      const mockMenuItems = [
-        { id: '1', title: 'Espresso', categoryId: 'cat-1' },
-        { id: '2', title: 'Americano', categoryId: 'cat-1' },
+    it('should return mapped menu items for a category', async () => {
+      const mockRepoItems = [
+        {
+          id: '1',
+          slug: 'espresso',
+          price: '3.50',
+          imageUrl: null,
+          isAvailable: true,
+          position: 1,
+          categoryId: 'cat-1',
+          menuItemTranslations: [{ id: 't1', title: 'Espresso', language: 'EN', itemId: '1' }],
+        },
+        {
+          id: '2',
+          slug: 'americano',
+          price: '4.00',
+          imageUrl: null,
+          isAvailable: true,
+          position: 2,
+          categoryId: 'cat-1',
+          menuItemTranslations: [{ id: 't2', title: 'Americano', language: 'EN', itemId: '2' }],
+        },
       ];
-      mockRepository.getMenuItemsByCategoryId.mockResolvedValue(mockMenuItems);
+      mockRepository.getMenuItemsByCategoryId.mockResolvedValue(mockRepoItems);
 
       const result = await service.getMenuItemsByCategoryId('cat-1');
 
       expect(mockRepository.getMenuItemsByCategoryId).toHaveBeenCalledWith('cat-1');
-      expect(result).toEqual({ menuItems: mockMenuItems });
+      expect(result).toEqual({
+        menuItems: [
+          {
+            id: '1',
+            slug: 'espresso',
+            price: '3.50',
+            imageUrl: null,
+            isAvailable: true,
+            position: 1,
+            translations: [{ id: 't1', title: 'Espresso', language: 'EN', itemId: '1' }],
+          },
+          {
+            id: '2',
+            slug: 'americano',
+            price: '4.00',
+            imageUrl: null,
+            isAvailable: true,
+            position: 2,
+            translations: [{ id: 't2', title: 'Americano', language: 'EN', itemId: '2' }],
+          },
+        ],
+      });
     });
 
     it('should return empty array when no items in category', async () => {
@@ -96,13 +157,11 @@ describe('MenuItemService', () => {
   describe('createMenuItem', () => {
     it('should create a new menu item', async () => {
       const createData = {
-        language: 'UA',
-        title: 'Лате',
-        description: 'Кава з молоком',
-        price: '4.5',
-        menuCategory: { id: 'cat-1' },
+        slug: 'latte',
+        price: '4.50',
+        categoryId: 'cat-1',
       };
-      const mockCreatedItem = { id: '1', ...createData, position: 1 };
+      const mockCreatedItem = { id: '1', ...createData, position: 1, isAvailable: true };
 
       mockRepository.getMenuItemsByCategoryId.mockResolvedValue([]);
       mockRepository.createMenuItem.mockResolvedValue(mockCreatedItem);
@@ -119,15 +178,13 @@ describe('MenuItemService', () => {
 
     it('should calculate correct position when items exist', async () => {
       const createData = {
-        language: 'UA',
-        title: 'Лате',
-        description: 'Кава з молоком',
-        price: '4.5',
-        menuCategory: { id: 'cat-1' },
+        slug: 'latte',
+        price: '4.50',
+        categoryId: 'cat-1',
       };
       const existingItems = [
-        { id: '1', title: 'Espresso', position: 1 },
-        { id: '2', title: 'Americano', position: 3 },
+        { id: '1', slug: 'espresso', position: 1 },
+        { id: '2', slug: 'americano', position: 3 },
       ];
       const mockCreatedItem = { id: '3', ...createData, position: 4 };
 
@@ -145,11 +202,9 @@ describe('MenuItemService', () => {
 
     it('should throw AppError.internalServerError on unexpected error', async () => {
       const createData = {
-        language: 'UA',
-        title: 'Лате',
-        description: 'Кава з молоком',
-        price: '4.5',
-        menuCategory: { id: 'cat-1' },
+        slug: 'latte',
+        price: '4.50',
+        categoryId: 'cat-1',
       };
 
       mockRepository.getMenuItemsByCategoryId.mockResolvedValue([]);
@@ -164,10 +219,10 @@ describe('MenuItemService', () => {
 
   describe('updateMenuItem', () => {
     it('should update a menu item', async () => {
-      const updateData = { id: '1', title: 'Updated Title' };
-      const mockUpdatedItem = { id: '1', title: 'Updated Title' };
+      const updateData = { id: '1', slug: 'updated-slug' };
+      const mockUpdatedItem = { id: '1', slug: 'updated-slug', price: '3.50', isAvailable: true, position: 1 };
 
-      mockRepository.getMenuItemById.mockResolvedValue(mockUpdatedItem);
+      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', slug: 'old-slug' });
       mockRepository.updateMenuItem.mockResolvedValue(mockUpdatedItem);
 
       const result = await service.updateMenuItem(updateData);
@@ -179,15 +234,14 @@ describe('MenuItemService', () => {
     it('should update a menu item with all fields', async () => {
       const updateData = {
         id: '1',
-        title: 'Updated Title',
-        description: 'Updated Description',
-        price: '5.5',
+        slug: 'updated-slug',
+        price: '5.50',
         isAvailable: false,
         imageUrl: 'http://example.com/new-image.jpg',
       };
       const mockUpdatedItem = { ...updateData };
 
-      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', title: 'Old Title' });
+      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', slug: 'old-slug' });
       mockRepository.updateMenuItem.mockResolvedValue(mockUpdatedItem);
 
       const result = await service.updateMenuItem(updateData);
@@ -197,7 +251,7 @@ describe('MenuItemService', () => {
     });
 
     it('should throw AppError.notFound when item not found', async () => {
-      const updateData = { id: 'non-existent', title: 'Updated Title' };
+      const updateData = { id: 'non-existent', slug: 'updated-slug' };
 
       mockRepository.getMenuItemById.mockResolvedValue(null);
 
@@ -208,9 +262,9 @@ describe('MenuItemService', () => {
     });
 
     it('should throw AppError.internalServerError on error', async () => {
-      const updateData = { id: '1', title: 'Updated Title' };
+      const updateData = { id: '1', slug: 'updated-slug' };
 
-      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', title: 'Old Title' });
+      mockRepository.getMenuItemById.mockResolvedValue({ id: '1', slug: 'old-slug' });
       mockRepository.updateMenuItem.mockRejectedValue(new Error('DB error'));
 
       await expect(service.updateMenuItem(updateData)).rejects.toThrow(AppError);
@@ -222,11 +276,11 @@ describe('MenuItemService', () => {
 
   describe('deleteMenuItem', () => {
     it('should delete a menu item and return success response', async () => {
-      const itemToDelete = { id: '1', title: 'Item 1', position: 2, categoryId: 'cat-1' };
+      const itemToDelete = { id: '1', slug: 'item-1', position: 2, categoryId: 'cat-1' };
       const items = [
-        { id: '1', title: 'Item 1', position: 2 },
-        { id: '2', title: 'Item 2', position: 1 },
-        { id: '3', title: 'Item 3', position: 3 },
+        { id: '1', slug: 'item-1', position: 2 },
+        { id: '2', slug: 'item-2', position: 1 },
+        { id: '3', slug: 'item-3', position: 3 },
       ];
 
       mockRepository.getMenuItemById.mockResolvedValue(itemToDelete);
@@ -242,11 +296,11 @@ describe('MenuItemService', () => {
     });
 
     it('should delete a menu item without position updates when it is the last one', async () => {
-      const itemToDelete = { id: '1', title: 'Item 1', position: 3, categoryId: 'cat-1' };
+      const itemToDelete = { id: '1', slug: 'item-1', position: 3, categoryId: 'cat-1' };
       const items = [
-        { id: '1', title: 'Item 1', position: 3 },
-        { id: '2', title: 'Item 2', position: 1 },
-        { id: '3', title: 'Item 3', position: 2 },
+        { id: '1', slug: 'item-1', position: 3 },
+        { id: '2', slug: 'item-2', position: 1 },
+        { id: '3', slug: 'item-3', position: 2 },
       ];
 
       mockRepository.getMenuItemById.mockResolvedValue(itemToDelete);
@@ -269,7 +323,7 @@ describe('MenuItemService', () => {
     });
 
     it('should throw AppError.internalServerError on error', async () => {
-      const itemToDelete = { id: '1', title: 'Item 1', position: 1, categoryId: 'cat-1' };
+      const itemToDelete = { id: '1', slug: 'item-1', position: 1, categoryId: 'cat-1' };
 
       mockRepository.getMenuItemById.mockResolvedValue(itemToDelete);
       mockRepository.getMenuItemsByCategoryId.mockRejectedValue(new Error('DB error'));
@@ -283,13 +337,13 @@ describe('MenuItemService', () => {
 
   describe('changeMenuItemPosition', () => {
     it('should change item position moving down', async () => {
-      const itemToUpdate = { id: '1', title: 'Item 1', position: 1, categoryId: 'cat-1' };
+      const itemToUpdate = { id: '1', slug: 'item-1', position: 1, categoryId: 'cat-1' };
       const items = [
-        { id: '1', title: 'Item 1', position: 1 },
-        { id: '2', title: 'Item 2', position: 2 },
-        { id: '3', title: 'Item 3', position: 3 },
+        { id: '1', slug: 'item-1', position: 1 },
+        { id: '2', slug: 'item-2', position: 2 },
+        { id: '3', slug: 'item-3', position: 3 },
       ];
-      const updatedItem = { id: '1', title: 'Item 1', position: 3 };
+      const updatedItem = { id: '1', slug: 'item-1', position: 3 };
 
       mockRepository.getMenuItemById.mockResolvedValue(itemToUpdate);
       mockRepository.getMenuItemsByCategoryId.mockResolvedValue(items);
@@ -308,13 +362,13 @@ describe('MenuItemService', () => {
     });
 
     it('should change item position moving up', async () => {
-      const itemToUpdate = { id: '3', title: 'Item 3', position: 3, categoryId: 'cat-1' };
+      const itemToUpdate = { id: '3', slug: 'item-3', position: 3, categoryId: 'cat-1' };
       const items = [
-        { id: '1', title: 'Item 1', position: 1 },
-        { id: '2', title: 'Item 2', position: 2 },
-        { id: '3', title: 'Item 3', position: 3 },
+        { id: '1', slug: 'item-1', position: 1 },
+        { id: '2', slug: 'item-2', position: 2 },
+        { id: '3', slug: 'item-3', position: 3 },
       ];
-      const updatedItem = { id: '3', title: 'Item 3', position: 1 };
+      const updatedItem = { id: '3', slug: 'item-3', position: 1 };
 
       mockRepository.getMenuItemById.mockResolvedValue(itemToUpdate);
       mockRepository.getMenuItemsByCategoryId.mockResolvedValue(items);
@@ -340,7 +394,7 @@ describe('MenuItemService', () => {
     });
 
     it('should throw AppError.internalServerError on unexpected error', async () => {
-      const itemToUpdate = { id: '1', title: 'Item 1', position: 1, categoryId: 'cat-1' };
+      const itemToUpdate = { id: '1', slug: 'item-1', position: 1, categoryId: 'cat-1' };
 
       mockRepository.getMenuItemById.mockResolvedValue(itemToUpdate);
       mockRepository.getMenuItemsByCategoryId.mockRejectedValue(new Error('DB error'));
@@ -348,6 +402,82 @@ describe('MenuItemService', () => {
       await expect(service.changeMenuItemPosition({ id: '1', position: 2 })).rejects.toThrow(AppError);
       await expect(service.changeMenuItemPosition({ id: '1', position: 2 })).rejects.toMatchObject({
         error: { message: 'Failed to change menu item position' },
+      });
+    });
+  });
+
+  describe('createMenuItemTranslation', () => {
+    it('should create a menu item translation', async () => {
+      const createData = { title: 'Espresso', description: 'Strong coffee', language: 'EN', itemId: '1' };
+      const mockTranslation = { id: 't1', ...createData };
+
+      mockRepository.createMenuItemTranslation.mockResolvedValue(mockTranslation);
+
+      const result = await service.createMenuItemTranslation(createData);
+
+      expect(mockRepository.createMenuItemTranslation).toHaveBeenCalledWith(createData);
+      expect(result).toEqual(mockTranslation);
+    });
+
+    it('should throw AppError.badRequest for invalid language', async () => {
+      const createData = { title: 'Espresso', language: 'INVALID', itemId: '1' };
+
+      await expect(service.createMenuItemTranslation(createData)).rejects.toThrow(AppError);
+    });
+
+    it('should throw AppError.internalServerError on unexpected error', async () => {
+      const createData = { title: 'Espresso', language: 'EN', itemId: '1' };
+
+      mockRepository.createMenuItemTranslation.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.createMenuItemTranslation(createData)).rejects.toThrow(AppError);
+      await expect(service.createMenuItemTranslation(createData)).rejects.toMatchObject({
+        error: { message: 'Failed to create menu item translation' },
+      });
+    });
+  });
+
+  describe('updateMenuItemTranslation', () => {
+    it('should update a menu item translation', async () => {
+      const updateData = { id: 't1', title: 'Updated Title', description: 'Updated desc' };
+      const mockUpdated = { ...updateData };
+
+      mockRepository.updateMenuItemTranslation.mockResolvedValue(mockUpdated);
+
+      const result = await service.updateMenuItemTranslation(updateData);
+
+      expect(mockRepository.updateMenuItemTranslation).toHaveBeenCalledWith(updateData);
+      expect(result).toEqual(mockUpdated);
+    });
+
+    it('should throw AppError.internalServerError on unexpected error', async () => {
+      const updateData = { id: 't1', title: 'Updated Title' };
+
+      mockRepository.updateMenuItemTranslation.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.updateMenuItemTranslation(updateData)).rejects.toThrow(AppError);
+      await expect(service.updateMenuItemTranslation(updateData)).rejects.toMatchObject({
+        error: { message: 'Failed to update menu item translation' },
+      });
+    });
+  });
+
+  describe('deleteMenuItemTranslation', () => {
+    it('should delete a translation and return success response', async () => {
+      mockRepository.deleteMenuItemTranslation.mockResolvedValue({ id: 't1' });
+
+      const result = await service.deleteMenuItemTranslation('t1');
+
+      expect(mockRepository.deleteMenuItemTranslation).toHaveBeenCalledWith('t1');
+      expect(result).toEqual({ success: true, message: 'Menu item translation with id t1 deleted successfully' });
+    });
+
+    it('should throw AppError.internalServerError on unexpected error', async () => {
+      mockRepository.deleteMenuItemTranslation.mockRejectedValue(new Error('DB error'));
+
+      await expect(service.deleteMenuItemTranslation('t1')).rejects.toThrow(AppError);
+      await expect(service.deleteMenuItemTranslation('t1')).rejects.toMatchObject({
+        error: { message: 'Failed to delete menu item translation' },
       });
     });
   });

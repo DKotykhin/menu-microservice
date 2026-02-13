@@ -7,9 +7,9 @@ import "google/protobuf/timestamp.proto";
 // MenuItemService defines the gRPC service for managing menu items.
 service MenuItemService {
   // rpc to get menu items by category ID
-  rpc GetMenuItemsByCategoryId(Id) returns (MenuItemList) {}
+  rpc GetMenuItemsByCategoryId(Id) returns (MenuItemListWithTranslation) {}
   // rpc to get a menu item by its ID
-  rpc GetMenuItemById(Id) returns (MenuItem) {}
+  rpc GetMenuItemById(Id) returns (MenuItemWithTranslation) {}
   // rpc to create a new menu item
   rpc CreateMenuItem(CreateMenuItemRequest) returns (MenuItem) {}
   // rpc to update an existing menu item
@@ -18,20 +18,12 @@ service MenuItemService {
   rpc ChangeMenuItemPosition(ChangeMenuItemPositionRequest) returns (MenuItem) {}
   // rpc to delete a menu item by its ID
   rpc DeleteMenuItem(Id) returns (StatusResponse) {}
-}
-
-// MenuItem represents a menu item with its details.
-message MenuItem {
-  string id = 1;
-  string language = 2;
-  string title = 3;
-  optional string description = 4;
-  string price = 5;
-  optional string image_url = 6;
-  bool is_available = 7;
-  int32 position = 8;
-  google.protobuf.Timestamp created_at = 9;
-  google.protobuf.Timestamp updated_at = 10;
+  // rpc to create a new menu item translation
+  rpc CreateMenuItemTranslation(CreateMenuItemTranslationRequest) returns (MenuItemTranslation) {}
+  // rpc to update an existing menu item translation
+  rpc UpdateMenuItemTranslation(UpdateMenuItemTranslationRequest) returns (MenuItemTranslation) {}
+  // rpc to delete a menu item translation by its ID
+  rpc DeleteMenuItemTranslation(Id) returns (StatusResponse) {}
 }
 
 // declaration of Id message
@@ -39,36 +31,77 @@ message Id {
   string id = 1;
 }
 
-// MenuItemList represents a list of menu items.
-message MenuItemList {
-  repeated MenuItem menu_items = 1;
+// MenuItem represents a menu item with its details.
+message MenuItem {
+  string id = 1;
+  string slug = 2;
+  string price = 3;
+  optional string image_url = 4;
+  bool is_available = 5;
+  int32 position = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// MenuItemWithTranslation represents a menu item with its translations.
+message MenuItemTranslation {
+  string id = 1;
+  string title = 2;
+  optional string description = 3;
+  string language = 4;
+}
+
+// MenuItemWithTranslation represents a menu item with its translations.
+message MenuItemWithTranslation {
+  string id = 1;
+  string slug = 2;
+  string price = 3;
+  optional string image_url = 4;
+  bool is_available = 5;
+  int32 position = 6;
+  repeated MenuItemTranslation translations = 7;
+}
+
+// MenuItemListWithTranslation represents a list of menu items with their translations.
+message MenuItemListWithTranslation {
+  repeated MenuItemWithTranslation menu_items = 1;
 }
 
 // Request message for creating a menu item.
 message CreateMenuItemRequest {
-  string language = 1;
-  string title = 2;
-  optional string description = 3;
-  string price = 4;
-  optional string image_url = 5;
-  optional bool is_available = 6;
-  Id menu_category = 7;
+  string slug = 1;
+  string price = 2;
+  optional string image_url = 3;
+  optional bool is_available = 4;
+  string category_id = 5;
 }
 // Request message for updating a menu item.
 message UpdateMenuItemRequest {
   string id = 1;
-  optional string language = 2;
-  optional string title = 3;
-  optional string description = 4;
-  optional string price = 5;
-  optional string image_url = 6;
-  optional bool is_available = 7;
+  optional string slug = 2;
+  optional string price = 3;
+  optional string image_url = 4;
+  optional bool is_available = 5;
 }
 
 // Request message for changing the position of a menu item.
 message ChangeMenuItemPositionRequest {
   string id = 1;
   int32 position = 2;
+}
+
+// Request message for creating a menu item translation.
+message CreateMenuItemTranslationRequest {
+  string title = 1;
+  optional string description = 2;
+  string language = 3;
+  string item_id = 4;
+}
+// Request message for updating a menu item translation.
+message UpdateMenuItemTranslationRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string description = 3;
 }
 
 // StatusResponse represents a standard response message indicating success or failure.

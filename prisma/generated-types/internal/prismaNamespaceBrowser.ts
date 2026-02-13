@@ -52,7 +52,9 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   MenuCategory: 'MenuCategory',
-  MenuItem: 'MenuItem'
+  MenuCategoryTranslation: 'MenuCategoryTranslation',
+  MenuItem: 'MenuItem',
+  MenuItemTranslation: 'MenuItemTranslation'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -73,9 +75,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const MenuCategoryScalarFieldEnum = {
   id: 'id',
-  language: 'language',
-  title: 'title',
-  description: 'description',
+  slug: 'slug',
   position: 'position',
   isAvailable: 'isAvailable',
   imageUrl: 'imageUrl',
@@ -86,11 +86,20 @@ export const MenuCategoryScalarFieldEnum = {
 export type MenuCategoryScalarFieldEnum = (typeof MenuCategoryScalarFieldEnum)[keyof typeof MenuCategoryScalarFieldEnum]
 
 
-export const MenuItemScalarFieldEnum = {
+export const MenuCategoryTranslationScalarFieldEnum = {
   id: 'id',
   language: 'language',
   title: 'title',
   description: 'description',
+  categoryId: 'categoryId'
+} as const
+
+export type MenuCategoryTranslationScalarFieldEnum = (typeof MenuCategoryTranslationScalarFieldEnum)[keyof typeof MenuCategoryTranslationScalarFieldEnum]
+
+
+export const MenuItemScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
   price: 'price',
   position: 'position',
   isAvailable: 'isAvailable',
@@ -101,6 +110,17 @@ export const MenuItemScalarFieldEnum = {
 } as const
 
 export type MenuItemScalarFieldEnum = (typeof MenuItemScalarFieldEnum)[keyof typeof MenuItemScalarFieldEnum]
+
+
+export const MenuItemTranslationScalarFieldEnum = {
+  id: 'id',
+  language: 'language',
+  title: 'title',
+  description: 'description',
+  itemId: 'itemId'
+} as const
+
+export type MenuItemTranslationScalarFieldEnum = (typeof MenuItemTranslationScalarFieldEnum)[keyof typeof MenuItemTranslationScalarFieldEnum]
 
 
 export const SortOrder = {

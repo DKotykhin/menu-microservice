@@ -385,7 +385,9 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   MenuCategory: 'MenuCategory',
-  MenuItem: 'MenuItem'
+  MenuCategoryTranslation: 'MenuCategoryTranslation',
+  MenuItem: 'MenuItem',
+  MenuItemTranslation: 'MenuItemTranslation'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -401,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "menuCategory" | "menuItem"
+    modelProps: "menuCategory" | "menuCategoryTranslation" | "menuItem" | "menuItemTranslation"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -479,6 +481,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MenuCategoryTranslation: {
+      payload: Prisma.$MenuCategoryTranslationPayload<ExtArgs>
+      fields: Prisma.MenuCategoryTranslationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MenuCategoryTranslationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MenuCategoryTranslationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>
+        }
+        findFirst: {
+          args: Prisma.MenuCategoryTranslationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MenuCategoryTranslationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>
+        }
+        findMany: {
+          args: Prisma.MenuCategoryTranslationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>[]
+        }
+        create: {
+          args: Prisma.MenuCategoryTranslationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>
+        }
+        createMany: {
+          args: Prisma.MenuCategoryTranslationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MenuCategoryTranslationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>[]
+        }
+        delete: {
+          args: Prisma.MenuCategoryTranslationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>
+        }
+        update: {
+          args: Prisma.MenuCategoryTranslationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>
+        }
+        deleteMany: {
+          args: Prisma.MenuCategoryTranslationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MenuCategoryTranslationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MenuCategoryTranslationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>[]
+        }
+        upsert: {
+          args: Prisma.MenuCategoryTranslationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuCategoryTranslationPayload>
+        }
+        aggregate: {
+          args: Prisma.MenuCategoryTranslationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMenuCategoryTranslation>
+        }
+        groupBy: {
+          args: Prisma.MenuCategoryTranslationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MenuCategoryTranslationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MenuCategoryTranslationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MenuCategoryTranslationCountAggregateOutputType> | number
+        }
+      }
+    }
     MenuItem: {
       payload: Prisma.$MenuItemPayload<ExtArgs>
       fields: Prisma.MenuItemFieldRefs
@@ -553,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MenuItemTranslation: {
+      payload: Prisma.$MenuItemTranslationPayload<ExtArgs>
+      fields: Prisma.MenuItemTranslationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MenuItemTranslationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MenuItemTranslationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>
+        }
+        findFirst: {
+          args: Prisma.MenuItemTranslationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MenuItemTranslationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>
+        }
+        findMany: {
+          args: Prisma.MenuItemTranslationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>[]
+        }
+        create: {
+          args: Prisma.MenuItemTranslationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>
+        }
+        createMany: {
+          args: Prisma.MenuItemTranslationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MenuItemTranslationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>[]
+        }
+        delete: {
+          args: Prisma.MenuItemTranslationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>
+        }
+        update: {
+          args: Prisma.MenuItemTranslationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>
+        }
+        deleteMany: {
+          args: Prisma.MenuItemTranslationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MenuItemTranslationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MenuItemTranslationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>[]
+        }
+        upsert: {
+          args: Prisma.MenuItemTranslationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MenuItemTranslationPayload>
+        }
+        aggregate: {
+          args: Prisma.MenuItemTranslationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMenuItemTranslation>
+        }
+        groupBy: {
+          args: Prisma.MenuItemTranslationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MenuItemTranslationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MenuItemTranslationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MenuItemTranslationCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -594,9 +744,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const MenuCategoryScalarFieldEnum = {
   id: 'id',
-  language: 'language',
-  title: 'title',
-  description: 'description',
+  slug: 'slug',
   position: 'position',
   isAvailable: 'isAvailable',
   imageUrl: 'imageUrl',
@@ -607,11 +755,20 @@ export const MenuCategoryScalarFieldEnum = {
 export type MenuCategoryScalarFieldEnum = (typeof MenuCategoryScalarFieldEnum)[keyof typeof MenuCategoryScalarFieldEnum]
 
 
-export const MenuItemScalarFieldEnum = {
+export const MenuCategoryTranslationScalarFieldEnum = {
   id: 'id',
   language: 'language',
   title: 'title',
   description: 'description',
+  categoryId: 'categoryId'
+} as const
+
+export type MenuCategoryTranslationScalarFieldEnum = (typeof MenuCategoryTranslationScalarFieldEnum)[keyof typeof MenuCategoryTranslationScalarFieldEnum]
+
+
+export const MenuItemScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
   price: 'price',
   position: 'position',
   isAvailable: 'isAvailable',
@@ -622,6 +779,17 @@ export const MenuItemScalarFieldEnum = {
 } as const
 
 export type MenuItemScalarFieldEnum = (typeof MenuItemScalarFieldEnum)[keyof typeof MenuItemScalarFieldEnum]
+
+
+export const MenuItemTranslationScalarFieldEnum = {
+  id: 'id',
+  language: 'language',
+  title: 'title',
+  description: 'description',
+  itemId: 'itemId'
+} as const
+
+export type MenuItemTranslationScalarFieldEnum = (typeof MenuItemTranslationScalarFieldEnum)[keyof typeof MenuItemTranslationScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -669,20 +837,6 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
- * Reference to a field of type 'Language'
- */
-export type EnumLanguageFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Language'>
-    
-
-
-/**
- * Reference to a field of type 'Language[]'
- */
-export type ListEnumLanguageFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Language[]'>
-    
-
-
-/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -714,6 +868,20 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Language'
+ */
+export type EnumLanguageFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Language'>
+    
+
+
+/**
+ * Reference to a field of type 'Language[]'
+ */
+export type ListEnumLanguageFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Language[]'>
     
 
 
@@ -826,7 +994,9 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   menuCategory?: Prisma.MenuCategoryOmit
+  menuCategoryTranslation?: Prisma.MenuCategoryTranslationOmit
   menuItem?: Prisma.MenuItemOmit
+  menuItemTranslation?: Prisma.MenuItemTranslationOmit
 }
 
 /* Types for Logging */

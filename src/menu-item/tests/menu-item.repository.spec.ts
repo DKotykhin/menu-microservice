@@ -11,6 +11,11 @@ const prismaMock = {
     update: jest.fn(),
     delete: jest.fn(),
   },
+  menuItemTranslation: {
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
   $transaction: jest.fn(),
 };
 
@@ -32,15 +37,17 @@ describe('MenuItemRepository', () => {
   });
 
   describe('getMenuItemById', () => {
-    it('should fetch a menu item by its ID', async () => {
+    it('should fetch a menu item by its ID with translations', async () => {
       const mockMenuItem = {
         id: '1',
-        title: 'Espresso',
-        description: 'Strong coffee',
-        price: 3.5,
-        language: 'EN',
+        slug: 'espresso',
+        price: '3.50',
+        isAvailable: true,
         position: 1,
         categoryId: 'cat-1',
+        menuItemTranslations: [
+          { id: 't1', title: 'Espresso', description: 'Strong coffee', language: 'EN', itemId: '1' },
+        ],
       };
       prismaMock.menuItem.findUnique.mockResolvedValue(mockMenuItem);
 
@@ -48,6 +55,7 @@ describe('MenuItemRepository', () => {
 
       expect(prismaMock.menuItem.findUnique).toHaveBeenCalledWith({
         where: { id: '1' },
+        include: { menuItemTranslations: true },
       });
       expect(result).toEqual(mockMenuItem);
     });
@@ -59,16 +67,29 @@ describe('MenuItemRepository', () => {
 
       expect(prismaMock.menuItem.findUnique).toHaveBeenCalledWith({
         where: { id: 'non-existent' },
+        include: { menuItemTranslations: true },
       });
       expect(result).toBeNull();
     });
   });
 
   describe('getMenuItemsByCategoryId', () => {
-    it('should fetch menu items for a specific category', async () => {
+    it('should fetch menu items for a specific category with translations', async () => {
       const mockMenuItems = [
-        { id: '1', title: 'Espresso', categoryId: 'cat-1', position: 1 },
-        { id: '2', title: 'Americano', categoryId: 'cat-1', position: 2 },
+        {
+          id: '1',
+          slug: 'espresso',
+          categoryId: 'cat-1',
+          position: 1,
+          menuItemTranslations: [{ id: 't1', title: 'Espresso', language: 'EN', itemId: '1' }],
+        },
+        {
+          id: '2',
+          slug: 'americano',
+          categoryId: 'cat-1',
+          position: 2,
+          menuItemTranslations: [{ id: 't2', title: 'Americano', language: 'EN', itemId: '2' }],
+        },
       ];
       prismaMock.menuItem.findMany.mockResolvedValue(mockMenuItems);
 
@@ -76,6 +97,7 @@ describe('MenuItemRepository', () => {
 
       expect(prismaMock.menuItem.findMany).toHaveBeenCalledWith({
         where: { categoryId: 'cat-1' },
+        include: { menuItemTranslations: true },
       });
       expect(result).toEqual(mockMenuItems);
       expect(result).toHaveLength(2);
@@ -88,6 +110,7 @@ describe('MenuItemRepository', () => {
 
       expect(prismaMock.menuItem.findMany).toHaveBeenCalledWith({
         where: { categoryId: 'empty-cat' },
+        include: { menuItemTranslations: true },
       });
       expect(result).toEqual([]);
     });
@@ -97,10 +120,8 @@ describe('MenuItemRepository', () => {
     it('should create a menu item with all fields', async () => {
       const mockCreatedItem = {
         id: '1',
-        language: 'UA',
-        title: 'Лате',
-        description: 'Кава з молоком',
-        price: 4.5,
+        slug: 'latte',
+        price: '4.50',
         isAvailable: true,
         imageUrl: 'http://example.com/latte.jpg',
         position: 3,
@@ -110,23 +131,19 @@ describe('MenuItemRepository', () => {
 
       const result = await repository.createMenuItem({
         data: {
-          language: 'UA',
-          title: 'Лате',
-          description: 'Кава з молоком',
-          price: '4.5',
+          slug: 'latte',
+          price: '4.50',
           isAvailable: true,
           imageUrl: 'http://example.com/latte.jpg',
-          menuCategory: { id: 'cat-1' },
+          categoryId: 'cat-1',
         },
         lastPosition: 2,
       });
 
       expect(prismaMock.menuItem.create).toHaveBeenCalledWith({
         data: {
-          language: 'UA',
-          title: 'Лате',
-          description: 'Кава з молоком',
-          price: '4.5',
+          slug: 'latte',
+          price: '4.50',
           isAvailable: true,
           imageUrl: 'http://example.com/latte.jpg',
           position: 3,
@@ -139,10 +156,8 @@ describe('MenuItemRepository', () => {
     it('should create a menu item without optional fields', async () => {
       const mockCreatedItem = {
         id: '1',
-        language: 'EN',
-        title: 'Espresso',
-        description: 'Strong coffee',
-        price: 3.0,
+        slug: 'espresso',
+        price: '3.00',
         position: 1,
         categoryId: 'cat-1',
       };
@@ -150,21 +165,17 @@ describe('MenuItemRepository', () => {
 
       const result = await repository.createMenuItem({
         data: {
-          language: 'EN',
-          title: 'Espresso',
-          description: 'Strong coffee',
-          price: '3.0',
-          menuCategory: { id: 'cat-1' },
+          slug: 'espresso',
+          price: '3.00',
+          categoryId: 'cat-1',
         },
         lastPosition: 0,
       });
 
       expect(prismaMock.menuItem.create).toHaveBeenCalledWith({
         data: {
-          language: 'EN',
-          title: 'Espresso',
-          description: 'Strong coffee',
-          price: '3.0',
+          slug: 'espresso',
+          price: '3.00',
           position: 1,
           categoryId: 'cat-1',
         },
@@ -175,10 +186,8 @@ describe('MenuItemRepository', () => {
     it('should create a menu item with isAvailable set to false', async () => {
       const mockCreatedItem = {
         id: '1',
-        language: 'EN',
-        title: 'Seasonal Special',
-        description: 'Limited time offer',
-        price: 5.0,
+        slug: 'seasonal-special',
+        price: '5.00',
         isAvailable: false,
         position: 1,
         categoryId: 'cat-1',
@@ -187,22 +196,18 @@ describe('MenuItemRepository', () => {
 
       const result = await repository.createMenuItem({
         data: {
-          language: 'EN',
-          title: 'Seasonal Special',
-          description: 'Limited time offer',
-          price: '5.0',
+          slug: 'seasonal-special',
+          price: '5.00',
           isAvailable: false,
-          menuCategory: { id: 'cat-1' },
+          categoryId: 'cat-1',
         },
         lastPosition: 0,
       });
 
       expect(prismaMock.menuItem.create).toHaveBeenCalledWith({
         data: {
-          language: 'EN',
-          title: 'Seasonal Special',
-          description: 'Limited time offer',
-          price: '5.0',
+          slug: 'seasonal-special',
+          price: '5.00',
           isAvailable: false,
           position: 1,
           categoryId: 'cat-1',
@@ -216,10 +221,8 @@ describe('MenuItemRepository', () => {
     it('should update a menu item with all fields', async () => {
       const mockUpdatedItem = {
         id: '1',
-        language: 'UA',
-        title: 'Оновлена назва',
-        description: 'Оновлений опис',
-        price: 5.5,
+        slug: 'updated-slug',
+        price: '5.50',
         isAvailable: false,
         imageUrl: 'http://example.com/new-image.jpg',
       };
@@ -227,10 +230,8 @@ describe('MenuItemRepository', () => {
 
       const result = await repository.updateMenuItem({
         id: '1',
-        language: 'UA',
-        title: 'Оновлена назва',
-        description: 'Оновлений опис',
-        price: '5.5',
+        slug: 'updated-slug',
+        price: '5.50',
         isAvailable: false,
         imageUrl: 'http://example.com/new-image.jpg',
       });
@@ -238,10 +239,8 @@ describe('MenuItemRepository', () => {
       expect(prismaMock.menuItem.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: {
-          language: 'UA',
-          title: 'Оновлена назва',
-          description: 'Оновлений опис',
-          price: '5.5',
+          slug: 'updated-slug',
+          price: '5.50',
           isAvailable: false,
           imageUrl: 'http://example.com/new-image.jpg',
         },
@@ -252,19 +251,19 @@ describe('MenuItemRepository', () => {
     it('should update a menu item with partial fields', async () => {
       const mockUpdatedItem = {
         id: '1',
-        title: 'Only Title Updated',
+        slug: 'new-slug',
       };
       prismaMock.menuItem.update.mockResolvedValue(mockUpdatedItem);
 
       const result = await repository.updateMenuItem({
         id: '1',
-        title: 'Only Title Updated',
+        slug: 'new-slug',
       });
 
       expect(prismaMock.menuItem.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: {
-          title: 'Only Title Updated',
+          slug: 'new-slug',
         },
       });
       expect(result).toEqual(mockUpdatedItem);
@@ -273,7 +272,7 @@ describe('MenuItemRepository', () => {
     it('should update only the price', async () => {
       const mockUpdatedItem = {
         id: '1',
-        price: 7.99,
+        price: '7.99',
       };
       prismaMock.menuItem.update.mockResolvedValue(mockUpdatedItem);
 
@@ -315,7 +314,7 @@ describe('MenuItemRepository', () => {
 
   describe('deleteMenuItem', () => {
     it('should delete a menu item and update positions of remaining items', async () => {
-      const mockDeletedItem = { id: '1', title: 'Deleted Item', position: 1 };
+      const mockDeletedItem = { id: '1', slug: 'deleted-item', position: 1 };
       const positionUpdates = [
         { id: '2', position: 1 },
         { id: '3', position: 2 },
@@ -338,7 +337,7 @@ describe('MenuItemRepository', () => {
     });
 
     it('should delete a menu item without position updates', async () => {
-      const mockDeletedItem = { id: '1', title: 'Last Item', position: 1 };
+      const mockDeletedItem = { id: '1', slug: 'last-item', position: 1 };
 
       prismaMock.$transaction.mockImplementation(async (callback: (prisma: typeof prismaMock) => Promise<unknown>) => {
         const mockPrismaInTransaction = {
@@ -359,7 +358,7 @@ describe('MenuItemRepository', () => {
 
   describe('changeMenuItemPosition', () => {
     it('should update positions for multiple menu items in a transaction', async () => {
-      const mockUpdatedItem = { id: '1', title: 'Menu Item', position: 2 };
+      const mockUpdatedItem = { id: '1', slug: 'menu-item', position: 2 };
       const positionUpdates = [
         { id: '1', position: 2 },
         { id: '2', position: 1 },
@@ -382,7 +381,7 @@ describe('MenuItemRepository', () => {
     });
 
     it('should handle single position update', async () => {
-      const mockUpdatedItem = { id: '3', title: 'Menu Item 3', position: 1 };
+      const mockUpdatedItem = { id: '3', slug: 'menu-item-3', position: 1 };
       const positionUpdates = [{ id: '3', position: 1 }];
 
       prismaMock.$transaction.mockImplementation(async (callback: (prisma: typeof prismaMock) => Promise<unknown>) => {
@@ -402,7 +401,7 @@ describe('MenuItemRepository', () => {
     });
 
     it('should handle multiple position updates for reordering', async () => {
-      const mockUpdatedItem = { id: '2', title: 'Menu Item 2', position: 3 };
+      const mockUpdatedItem = { id: '2', slug: 'menu-item-2', position: 3 };
       const positionUpdates = [
         { id: '1', position: 1 },
         { id: '2', position: 3 },
@@ -423,6 +422,101 @@ describe('MenuItemRepository', () => {
 
       expect(prismaMock.$transaction).toHaveBeenCalled();
       expect(result).toEqual(mockUpdatedItem);
+    });
+  });
+
+  describe('createMenuItemTranslation', () => {
+    it('should create a translation with all fields', async () => {
+      const mockTranslation = {
+        id: 't1',
+        title: 'Espresso',
+        description: 'Strong coffee',
+        language: 'EN',
+        itemId: '1',
+      };
+      prismaMock.menuItemTranslation.create.mockResolvedValue(mockTranslation);
+
+      const result = await repository.createMenuItemTranslation({
+        title: 'Espresso',
+        description: 'Strong coffee',
+        language: 'EN',
+        itemId: '1',
+      });
+
+      expect(prismaMock.menuItemTranslation.create).toHaveBeenCalledWith({
+        data: {
+          title: 'Espresso',
+          description: 'Strong coffee',
+          language: 'EN',
+          itemId: '1',
+        },
+      });
+      expect(result).toEqual(mockTranslation);
+    });
+
+    it('should create a translation without description', async () => {
+      const mockTranslation = {
+        id: 't2',
+        title: 'Лате',
+        language: 'UA',
+        itemId: '1',
+      };
+      prismaMock.menuItemTranslation.create.mockResolvedValue(mockTranslation);
+
+      const result = await repository.createMenuItemTranslation({
+        title: 'Лате',
+        language: 'UA',
+        itemId: '1',
+      });
+
+      expect(prismaMock.menuItemTranslation.create).toHaveBeenCalledWith({
+        data: {
+          title: 'Лате',
+          language: 'UA',
+          itemId: '1',
+        },
+      });
+      expect(result).toEqual(mockTranslation);
+    });
+  });
+
+  describe('updateMenuItemTranslation', () => {
+    it('should update a translation with all fields', async () => {
+      const mockUpdated = {
+        id: 't1',
+        title: 'Updated Title',
+        description: 'Updated description',
+      };
+      prismaMock.menuItemTranslation.update.mockResolvedValue(mockUpdated);
+
+      const result = await repository.updateMenuItemTranslation({
+        id: 't1',
+        title: 'Updated Title',
+        description: 'Updated description',
+      });
+
+      expect(prismaMock.menuItemTranslation.update).toHaveBeenCalledWith({
+        where: { id: 't1' },
+        data: {
+          title: 'Updated Title',
+          description: 'Updated description',
+        },
+      });
+      expect(result).toEqual(mockUpdated);
+    });
+  });
+
+  describe('deleteMenuItemTranslation', () => {
+    it('should delete a translation by id', async () => {
+      const mockDeleted = { id: 't1', title: 'Deleted', language: 'EN', itemId: '1' };
+      prismaMock.menuItemTranslation.delete.mockResolvedValue(mockDeleted);
+
+      const result = await repository.deleteMenuItemTranslation('t1');
+
+      expect(prismaMock.menuItemTranslation.delete).toHaveBeenCalledWith({
+        where: { id: 't1' },
+      });
+      expect(result).toEqual(mockDeleted);
     });
   });
 });

@@ -11,12 +11,15 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "menu_item.v1";
 
+/** declaration of Id message */
+export interface Id {
+  id: string;
+}
+
 /** MenuItem represents a menu item with its details. */
 export interface MenuItem {
   id: string;
-  language: string;
-  title: string;
-  description?: string | null | undefined;
+  slug: string;
   price: string;
   imageUrl?: string | null | undefined;
   isAvailable: boolean;
@@ -25,33 +28,43 @@ export interface MenuItem {
   updatedAt: Date | null;
 }
 
-/** declaration of Id message */
-export interface Id {
+/** MenuItemWithTranslation represents a menu item with its translations. */
+export interface MenuItemTranslation {
   id: string;
+  title: string;
+  description?: string | null | undefined;
+  language: string;
 }
 
-/** MenuItemList represents a list of menu items. */
-export interface MenuItemList {
-  menuItems: MenuItem[];
+/** MenuItemWithTranslation represents a menu item with its translations. */
+export interface MenuItemWithTranslation {
+  id: string;
+  slug: string;
+  price: string;
+  imageUrl?: string | null | undefined;
+  isAvailable: boolean;
+  position: number;
+  translations: MenuItemTranslation[];
+}
+
+/** MenuItemListWithTranslation represents a list of menu items with their translations. */
+export interface MenuItemListWithTranslation {
+  menuItems: MenuItemWithTranslation[];
 }
 
 /** Request message for creating a menu item. */
 export interface CreateMenuItemRequest {
-  language: string;
-  title: string;
-  description?: string | null | undefined;
+  slug: string;
   price: string;
   imageUrl?: string | null | undefined;
   isAvailable?: boolean | null | undefined;
-  menuCategory: Id | null;
+  categoryId: string;
 }
 
 /** Request message for updating a menu item. */
 export interface UpdateMenuItemRequest {
   id: string;
-  language?: string | null | undefined;
-  title?: string | null | undefined;
-  description?: string | null | undefined;
+  slug?: string | null | undefined;
   price?: string | null | undefined;
   imageUrl?: string | null | undefined;
   isAvailable?: boolean | null | undefined;
@@ -61,6 +74,21 @@ export interface UpdateMenuItemRequest {
 export interface ChangeMenuItemPositionRequest {
   id: string;
   position: number;
+}
+
+/** Request message for creating a menu item translation. */
+export interface CreateMenuItemTranslationRequest {
+  title: string;
+  description?: string | null | undefined;
+  language: string;
+  itemId: string;
+}
+
+/** Request message for updating a menu item translation. */
+export interface UpdateMenuItemTranslationRequest {
+  id: string;
+  title?: string | null | undefined;
+  description?: string | null | undefined;
 }
 
 /** StatusResponse represents a standard response message indicating success or failure. */
@@ -85,11 +113,11 @@ wrappers[".google.protobuf.Timestamp"] = {
 export interface MenuItemServiceClient {
   /** rpc to get menu items by category ID */
 
-  getMenuItemsByCategoryId(request: Id): Observable<MenuItemList>;
+  getMenuItemsByCategoryId(request: Id): Observable<MenuItemListWithTranslation>;
 
   /** rpc to get a menu item by its ID */
 
-  getMenuItemById(request: Id): Observable<MenuItem>;
+  getMenuItemById(request: Id): Observable<MenuItemWithTranslation>;
 
   /** rpc to create a new menu item */
 
@@ -106,6 +134,18 @@ export interface MenuItemServiceClient {
   /** rpc to delete a menu item by its ID */
 
   deleteMenuItem(request: Id): Observable<StatusResponse>;
+
+  /** rpc to create a new menu item translation */
+
+  createMenuItemTranslation(request: CreateMenuItemTranslationRequest): Observable<MenuItemTranslation>;
+
+  /** rpc to update an existing menu item translation */
+
+  updateMenuItemTranslation(request: UpdateMenuItemTranslationRequest): Observable<MenuItemTranslation>;
+
+  /** rpc to delete a menu item translation by its ID */
+
+  deleteMenuItemTranslation(request: Id): Observable<StatusResponse>;
 }
 
 /** MenuItemService defines the gRPC service for managing menu items. */
@@ -113,11 +153,15 @@ export interface MenuItemServiceClient {
 export interface MenuItemServiceController {
   /** rpc to get menu items by category ID */
 
-  getMenuItemsByCategoryId(request: Id): Promise<MenuItemList> | Observable<MenuItemList> | MenuItemList;
+  getMenuItemsByCategoryId(
+    request: Id,
+  ): Promise<MenuItemListWithTranslation> | Observable<MenuItemListWithTranslation> | MenuItemListWithTranslation;
 
   /** rpc to get a menu item by its ID */
 
-  getMenuItemById(request: Id): Promise<MenuItem> | Observable<MenuItem> | MenuItem;
+  getMenuItemById(
+    request: Id,
+  ): Promise<MenuItemWithTranslation> | Observable<MenuItemWithTranslation> | MenuItemWithTranslation;
 
   /** rpc to create a new menu item */
 
@@ -134,6 +178,22 @@ export interface MenuItemServiceController {
   /** rpc to delete a menu item by its ID */
 
   deleteMenuItem(request: Id): Promise<StatusResponse> | Observable<StatusResponse> | StatusResponse;
+
+  /** rpc to create a new menu item translation */
+
+  createMenuItemTranslation(
+    request: CreateMenuItemTranslationRequest,
+  ): Promise<MenuItemTranslation> | Observable<MenuItemTranslation> | MenuItemTranslation;
+
+  /** rpc to update an existing menu item translation */
+
+  updateMenuItemTranslation(
+    request: UpdateMenuItemTranslationRequest,
+  ): Promise<MenuItemTranslation> | Observable<MenuItemTranslation> | MenuItemTranslation;
+
+  /** rpc to delete a menu item translation by its ID */
+
+  deleteMenuItemTranslation(request: Id): Promise<StatusResponse> | Observable<StatusResponse> | StatusResponse;
 }
 
 export function MenuItemServiceControllerMethods() {
@@ -145,6 +205,9 @@ export function MenuItemServiceControllerMethods() {
       "updateMenuItem",
       "changeMenuItemPosition",
       "deleteMenuItem",
+      "createMenuItemTranslation",
+      "updateMenuItemTranslation",
+      "deleteMenuItemTranslation",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

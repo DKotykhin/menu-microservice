@@ -3,15 +3,16 @@ syntax = "proto3";
 package menu_category.v1;
 
 import "google/protobuf/timestamp.proto";
+import "menu-item.proto";
 
 // MenuCategoryService defines the gRPC service for managing menu categories.
 service MenuCategoryService {
   // rpc to get full menu by language
   rpc GetFullMenuByLanguage(Language) returns (MenuCategoryListWithItems) {}
   // rpc to get menu categories by language
-  rpc GetMenuCategoriesByLanguage(Language) returns (MenuCategoryList) {}
+  rpc GetMenuCategoriesByLanguage(Language) returns (MenuCategoryListWithTranslation) {}
   // rpc to get a menu category by its ID
-  rpc GetMenuCategoryById(Id) returns (MenuCategory) {}
+  rpc GetMenuCategoryById(Id) returns (MenuCategoryWithTranslation) {}
   // rpc to create a new menu category
   rpc CreateMenuCategory(CreateMenuCategoryRequest) returns (MenuCategory) {}
   // rpc to update an existing menu category
@@ -20,6 +21,12 @@ service MenuCategoryService {
   rpc ChangeMenuCategoryPosition(ChangeMenuCategoryPositionRequest) returns (MenuCategory) {}
   // rpc to delete a menu category by its ID
   rpc DeleteMenuCategory(Id) returns (StatusResponse) {}
+  // rpc to create a new category translation
+  rpc CreateMenuCategoryTranslation(CreateMenuCategoryTranslationRequest) returns (MenuCategoryTranslation) {}
+  // rpc to update an existing category translation
+  rpc UpdateMenuCategoryTranslation(UpdateMenuCategoryTranslationRequest) returns (MenuCategoryTranslation) {}
+  // rpc to delete a category translation by its ID
+  rpc DeleteMenuCategoryTranslation(Id) returns (StatusResponse) {}
 }
 
 // declaration of Language message
@@ -32,73 +39,90 @@ message Id {
   string id = 1;
 }
 
-// Message representing a list of menu categories
-message MenuCategoryList {
-  repeated MenuCategory data = 1;
-}
-
 // Message representing a list of menu categories with items
 message MenuCategoryListWithItems {
   repeated MenuCategoryWithItems data = 1;
 }
 
+// Message representing a list of menu categories with translations
+message MenuCategoryListWithTranslation {
+  repeated MenuCategoryWithTranslation data = 1;
+}
+
 // Message representing a menu category
 message MenuCategory {
+  string id = 1;
+  string slug = 2;
+  int32 position = 3;
+  optional string image_url = 4;
+  bool is_available = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Message representing a menu category translation
+message MenuCategoryTranslation {
   string id = 1;
   string language = 2;
   string title = 3;
   optional string description = 4;
-  int32 position = 5;
-  optional string image_url = 6;
-  bool is_available = 7;
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
 }
 
-message MenuItem {
+// Message representing a menu category with translation
+message MenuCategoryWithTranslation {
   string id = 1;
-  string title = 2;
-  optional string description = 3;
-  string price = 4;
-  optional string image_url = 5;
-  bool is_available = 6;
-  int32 position = 7;
+  string slug = 2;
+  int32 position = 3;
+  optional string image_url = 4;
+  bool is_available = 5;
+  repeated MenuCategoryTranslation translations = 6;
 }
 
 // Message representing a menu category with items
 message MenuCategoryWithItems {
   string id = 1;
-  string language = 2;
-  string title = 3;
-  optional string description = 4;
-  int32 position = 5;
-  optional string image_url = 6;
-  bool is_available = 7;
-  repeated MenuItem menu_items = 8;
+  string slug = 2;
+  int32 position = 3;
+  optional string image_url = 4;
+  bool is_available = 5;
+  repeated MenuCategoryTranslation translations = 6;
+  repeated menu_item.v1.MenuItemWithTranslation menu_items = 7;
 }
 
 // Request message for creating a menu category.
 message CreateMenuCategoryRequest {
-  string language = 1;
-  string title = 2;
-  optional string description = 3;
-  optional string image_url = 4;
-  optional bool is_available = 5;
+  string slug = 1;
+  optional string image_url = 2;
+  optional bool is_available = 3;
 }
 // Request message for updating a menu category.
 message UpdateMenuCategoryRequest {
   string id = 1;
-  optional string language = 2;
-  optional string title = 3;
-  optional string description = 4;
-  optional string image_url = 5;
-  optional bool is_available = 6;
+  optional string slug = 2;
+  optional string image_url = 3;
+  optional bool is_available = 4;
 }
 // Request message for changing the position of a menu category.
 message ChangeMenuCategoryPositionRequest {
   string id = 1;
   int32 position = 2;
 }
+
+// Request message for creating a menu category translation.
+message CreateMenuCategoryTranslationRequest {
+  string category_id = 1;
+  string language = 2;
+  string title = 3;
+  optional string description = 4;
+}
+
+// Request message for updating a menu category translation.
+message UpdateMenuCategoryTranslationRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string description = 3;
+}
+
 // Message representing a status response
 message StatusResponse {
   bool success = 1;

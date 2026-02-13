@@ -1,15 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { AppError } from 'src/utils/errors/app-error';
+import { Language } from 'prisma/generated-types/client';
 import { MenuItemRepository } from './menu-item.repository';
+import { toMenuItemWithTranslation } from './menu-item.mapper';
 
 import type {
   ChangeMenuItemPositionRequest,
   CreateMenuItemRequest,
+  CreateMenuItemTranslationRequest,
   MenuItem,
-  MenuItemList,
+  MenuItemListWithTranslation,
+  MenuItemTranslation,
+  MenuItemWithTranslation,
   StatusResponse,
   UpdateMenuItemRequest,
+  UpdateMenuItemTranslationRequest,
 } from 'src/generated-types/menu-item';
 
 @Injectable()
@@ -17,7 +23,9 @@ export class MenuItemService {
   private readonly logger = new Logger(MenuItemService.name);
   constructor(private readonly menuItemRepository: MenuItemRepository) {}
 
-  async getMenuItemById(id: string): Promise<MenuItem> {
+  // ---- Menu Item Retrieval ---- //
+
+  async getMenuItemById(id: string): Promise<MenuItemWithTranslation> {
     this.logger.log(`Fetching menu item by id: ${id}`);
     try {
       const menuItem = await this.menuItemRepository.getMenuItemById(id);
@@ -27,7 +35,7 @@ export class MenuItemService {
         throw AppError.notFound(`Menu item with id ${id} not found`);
       }
 
-      return menuItem;
+      return toMenuItemWithTranslation(menuItem);
     } catch (error) {
       this.logger.error(`Failed to get menu item by id: ${id}`, error instanceof Error ? error.message : error);
       if (error instanceof AppError) throw error;
@@ -35,12 +43,12 @@ export class MenuItemService {
     }
   }
 
-  async getMenuItemsByCategoryId(categoryId: string): Promise<MenuItemList> {
+  async getMenuItemsByCategoryId(categoryId: string): Promise<MenuItemListWithTranslation> {
     this.logger.log(`Fetching menu items by category id: ${categoryId}`);
     try {
       const menuItems = await this.menuItemRepository.getMenuItemsByCategoryId(categoryId);
 
-      return { menuItems };
+      return { menuItems: menuItems.map(toMenuItemWithTranslation) };
     } catch (error) {
       this.logger.error(
         `Failed to get menu items by category id: ${categoryId}`,
@@ -51,19 +59,21 @@ export class MenuItemService {
     }
   }
 
+  // ---- Menu Item Management ---- //
+
   async createMenuItem(data: CreateMenuItemRequest): Promise<MenuItem> {
-    this.logger.log(`Creating menu item with title: ${data.title}`);
+    this.logger.log(`Creating menu item with slug: ${data.slug}`);
     try {
-      if (!data.menuCategory || !data.menuCategory.id) {
+      if (!data.categoryId) {
         this.logger.warn('Menu category is required to create a menu item');
         throw AppError.badRequest('Menu category is required');
       }
-      const lastItems = await this.menuItemRepository.getMenuItemsByCategoryId(data.menuCategory.id);
+      const lastItems = await this.menuItemRepository.getMenuItemsByCategoryId(data.categoryId);
       const lastPosition = lastItems.reduce((max, item) => (item.position > max ? item.position : max), 0);
       return await this.menuItemRepository.createMenuItem({ data, lastPosition });
     } catch (error) {
       this.logger.error(
-        `Failed to create menu item with title: ${data.title}`,
+        `Failed to create menu item with slug: ${data.slug}`,
         error instanceof Error ? error.message : error,
       );
       if (error instanceof AppError) throw error;
@@ -160,6 +170,50 @@ export class MenuItemService {
     }
   }
 
+  // ---- Menu Item Translations ---- //
+  async createMenuItemTranslation(data: CreateMenuItemTranslationRequest): Promise<MenuItemTranslation> {
+    this.logger.log(`Creating menu item translation for menu item ID: ${data.itemId} and language: ${data.language}`);
+    try {
+      this.isValidLanguage(data.language);
+      return await this.menuItemRepository.createMenuItemTranslation(data);
+    } catch (error) {
+      this.logger.error(
+        `Failed to create menu item translation for item ID: ${data.itemId} and language: ${data.language}`,
+        error instanceof Error ? error.message : error,
+      );
+      if (error instanceof AppError) throw error;
+      throw AppError.internalServerError('Failed to create menu item translation');
+    }
+  }
+
+  async updateMenuItemTranslation(data: UpdateMenuItemTranslationRequest): Promise<MenuItemTranslation> {
+    this.logger.log(`Updating menu item translation with ID: ${data.id}`);
+    try {
+      return await this.menuItemRepository.updateMenuItemTranslation(data);
+    } catch (error) {
+      this.logger.error(
+        `Failed to update menu item translation with ID: ${data.id}`,
+        error instanceof Error ? error.message : error,
+      );
+      if (error instanceof AppError) throw error;
+      throw AppError.internalServerError('Failed to update menu item translation');
+    }
+  }
+
+  async deleteMenuItemTranslation(id: string): Promise<StatusResponse> {
+    this.logger.log(`Deleting menu item translation with ID: ${id}`);
+    try {
+      await this.menuItemRepository.deleteMenuItemTranslation(id);
+      return { success: true, message: `Menu item translation with id ${id} deleted successfully` };
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete menu item translation with ID: ${id}`,
+        error instanceof Error ? error.message : error,
+      );
+      throw AppError.internalServerError('Failed to delete menu item translation');
+    }
+  }
+
   // Business logic: calculate which menu items need position updates
   private calculatePositionUpdates(
     items: MenuItem[],
@@ -188,5 +242,14 @@ export class MenuItemService {
         const original = items.find((i) => i.id === update.id);
         return original && original.position !== update.position;
       });
+  }
+
+  // Check if language is valid
+  private isValidLanguage(language: string): void {
+    const validLanguages = Object.values(Language);
+    // return validLanguages.includes(language as Language);
+    if (!validLanguages.includes(language as Language)) {
+      throw AppError.badRequest(`Invalid language: ${language}. Must be one of: ${validLanguages.join(', ')}`);
+    }
   }
 }

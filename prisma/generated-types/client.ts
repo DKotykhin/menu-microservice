@@ -43,7 +43,17 @@ export { Prisma }
  */
 export type MenuCategory = Prisma.MenuCategoryModel
 /**
+ * Model MenuCategoryTranslation
+ * 
+ */
+export type MenuCategoryTranslation = Prisma.MenuCategoryTranslationModel
+/**
  * Model MenuItem
  * 
  */
 export type MenuItem = Prisma.MenuItemModel
+/**
+ * Model MenuItemTranslation
+ * 
+ */
+export type MenuItemTranslation = Prisma.MenuItemTranslationModel

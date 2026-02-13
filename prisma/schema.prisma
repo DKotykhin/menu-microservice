@@ -15,34 +15,55 @@ enum Language {
 }
 
 model MenuCategory {
-  id          String     @id @default(uuid())
-  language    Language
-  title       String
-  description String?
-  position    Int
-  isAvailable Boolean    @default(true) @map("is_available")
-  imageUrl    String?    @map("image_url")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
-  menuItems   MenuItem[] @relation("CategoryToMenuItems")
+  id                       String                    @id @default(uuid())
+  slug                     String
+  position                 Int
+  isAvailable              Boolean                   @default(true) @map("is_available")
+  imageUrl                 String?                   @map("image_url")
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @default(now()) @updatedAt @map("updated_at")
+  menuItems                MenuItem[]                @relation("CategoryToMenuItems")
+  menuCategoryTranslations MenuCategoryTranslation[] @relation("CategoryToTranslations")
 
-  @@unique([language, title])
   @@map("menu_categories")
 }
 
-model MenuItem {
+model MenuCategoryTranslation {
   id          String       @id @default(uuid())
   language    Language
   title       String
   description String?
-  price       String
-  position    Int
-  isAvailable Boolean      @default(true) @map("is_available")
-  imageUrl    String?      @map("image_url")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at")
   categoryId  String       @map("category_id")
-  category    MenuCategory @relation("CategoryToMenuItems", fields: [categoryId], references: [id])
+  category    MenuCategory @relation("CategoryToTranslations", fields: [categoryId], references: [id])
+
+  @@unique([language, categoryId])
+  @@map("menu_category_translations")
+}
+
+model MenuItem {
+  id                   String                @id @default(uuid())
+  slug                 String
+  price                String
+  position             Int
+  isAvailable          Boolean               @default(true) @map("is_available")
+  imageUrl             String?               @map("image_url")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @default(now()) @updatedAt @map("updated_at")
+  categoryId           String                @map("category_id")
+  category             MenuCategory          @relation("CategoryToMenuItems", fields: [categoryId], references: [id])
+  menuItemTranslations MenuItemTranslation[] @relation("ItemToTranslations")
 
   @@map("menu_items")
+}
+
+model MenuItemTranslation {
+  id          String   @id @default(uuid())
+  language    Language
+  title       String
+  description String?
+  itemId      String   @map("item_id")
+  item        MenuItem @relation("ItemToTranslations", fields: [itemId], references: [id])
+
+  @@unique([language, itemId])
+  @@map("menu_item_translations")
 }

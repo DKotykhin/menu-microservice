@@ -10,6 +10,9 @@ const mockService = {
   updateMenuItem: jest.fn(),
   deleteMenuItem: jest.fn(),
   changeMenuItemPosition: jest.fn(),
+  createMenuItemTranslation: jest.fn(),
+  updateMenuItemTranslation: jest.fn(),
+  deleteMenuItemTranslation: jest.fn(),
 };
 
 describe('MenuItemController', () => {
@@ -32,7 +35,14 @@ describe('MenuItemController', () => {
 
   describe('getMenuItemById', () => {
     it('should return a menu item by ID', async () => {
-      const mockMenuItem = { id: '1', title: 'Espresso', price: '3.5' };
+      const mockMenuItem = {
+        id: '1',
+        slug: 'espresso',
+        price: '3.50',
+        isAvailable: true,
+        position: 1,
+        translations: [{ id: 't1', title: 'Espresso', language: 'EN' }],
+      };
       mockService.getMenuItemById.mockResolvedValue(mockMenuItem);
 
       const result = await controller.getMenuItemById({ id: '1' });
@@ -46,8 +56,8 @@ describe('MenuItemController', () => {
     it('should return menu items for a category', async () => {
       const mockMenuItems = {
         menuItems: [
-          { id: '1', title: 'Espresso', categoryId: 'cat-1' },
-          { id: '2', title: 'Americano', categoryId: 'cat-1' },
+          { id: '1', slug: 'espresso', price: '3.50', position: 1, translations: [] },
+          { id: '2', slug: 'americano', price: '4.00', position: 2, translations: [] },
         ],
       };
       mockService.getMenuItemsByCategoryId.mockResolvedValue(mockMenuItems);
@@ -72,13 +82,11 @@ describe('MenuItemController', () => {
   describe('createMenuItem', () => {
     it('should create a menu item and return it', async () => {
       const createData = {
-        language: 'UA',
-        title: 'Лате',
-        description: 'Кава з молоком',
-        price: '4.5',
-        menuCategory: { id: 'cat-1' },
+        slug: 'espresso',
+        price: '4.50',
+        categoryId: 'cat-1',
       };
-      const mockCreatedItem = { id: '1', ...createData, position: 1, categoryId: 'cat-1' };
+      const mockCreatedItem = { id: '1', ...createData, position: 1, isAvailable: true };
       mockService.createMenuItem.mockResolvedValue(mockCreatedItem);
 
       const result = await controller.createMenuItem(createData);
@@ -89,15 +97,13 @@ describe('MenuItemController', () => {
 
     it('should create a menu item with all optional fields', async () => {
       const createData = {
-        language: 'EN',
-        title: 'Espresso',
-        description: 'Strong coffee',
-        price: '3.5',
+        slug: 'espresso',
+        price: '3.50',
         isAvailable: true,
         imageUrl: 'http://example.com/espresso.jpg',
-        menuCategory: { id: 'cat-1' },
+        categoryId: 'cat-1',
       };
-      const mockCreatedItem = { id: '1', ...createData, position: 1, categoryId: 'cat-1' };
+      const mockCreatedItem = { id: '1', ...createData, position: 1 };
       mockService.createMenuItem.mockResolvedValue(mockCreatedItem);
 
       const result = await controller.createMenuItem(createData);
@@ -109,8 +115,8 @@ describe('MenuItemController', () => {
 
   describe('updateMenuItem', () => {
     it('should update a menu item and return it', async () => {
-      const updateData = { id: '1', title: 'Updated Title' };
-      const mockUpdatedItem = { id: '1', title: 'Updated Title' };
+      const updateData = { id: '1', slug: 'updated-slug' };
+      const mockUpdatedItem = { id: '1', slug: 'updated-slug', price: '3.50', isAvailable: true, position: 1 };
       mockService.updateMenuItem.mockResolvedValue(mockUpdatedItem);
 
       const result = await controller.updateMenuItem(updateData);
@@ -122,10 +128,8 @@ describe('MenuItemController', () => {
     it('should update a menu item with all fields', async () => {
       const updateData = {
         id: '1',
-        language: 'UA',
-        title: 'Оновлена назва',
-        description: 'Оновлений опис',
-        price: '5.5',
+        slug: 'updated-slug',
+        price: '5.50',
         isAvailable: false,
         imageUrl: 'http://example.com/new-image.jpg',
       };
@@ -154,7 +158,7 @@ describe('MenuItemController', () => {
   describe('changeMenuItemPosition', () => {
     it('should change item position and return updated item', async () => {
       const positionData = { id: '1', position: 3 };
-      const mockUpdatedItem = { id: '1', title: 'Item', position: 3 };
+      const mockUpdatedItem = { id: '1', slug: 'item-1', position: 3 };
       mockService.changeMenuItemPosition.mockResolvedValue(mockUpdatedItem);
 
       const result = await controller.changeMenuItemPosition(positionData);
@@ -165,13 +169,51 @@ describe('MenuItemController', () => {
 
     it('should change item position moving up', async () => {
       const positionData = { id: '3', position: 1 };
-      const mockUpdatedItem = { id: '3', title: 'Item 3', position: 1 };
+      const mockUpdatedItem = { id: '3', slug: 'item-3', position: 1 };
       mockService.changeMenuItemPosition.mockResolvedValue(mockUpdatedItem);
 
       const result = await controller.changeMenuItemPosition(positionData);
 
       expect(mockService.changeMenuItemPosition).toHaveBeenCalledWith(positionData);
       expect(result).toEqual(mockUpdatedItem);
+    });
+  });
+
+  describe('createMenuItemTranslation', () => {
+    it('should create a translation and return it', async () => {
+      const createData = { title: 'Espresso', description: 'Strong coffee', language: 'EN', itemId: '1' };
+      const mockTranslation = { id: 't1', ...createData };
+      mockService.createMenuItemTranslation.mockResolvedValue(mockTranslation);
+
+      const result = await controller.createMenuItemTranslation(createData);
+
+      expect(mockService.createMenuItemTranslation).toHaveBeenCalledWith(createData);
+      expect(result).toEqual(mockTranslation);
+    });
+  });
+
+  describe('updateMenuItemTranslation', () => {
+    it('should update a translation and return it', async () => {
+      const updateData = { id: 't1', title: 'Updated Title', description: 'Updated desc' };
+      const mockUpdated = { ...updateData };
+      mockService.updateMenuItemTranslation.mockResolvedValue(mockUpdated);
+
+      const result = await controller.updateMenuItemTranslation(updateData);
+
+      expect(mockService.updateMenuItemTranslation).toHaveBeenCalledWith(updateData);
+      expect(result).toEqual(mockUpdated);
+    });
+  });
+
+  describe('deleteMenuItemTranslation', () => {
+    it('should delete a translation and return status response', async () => {
+      const mockResponse = { success: true, message: 'Menu item translation with id t1 deleted successfully' };
+      mockService.deleteMenuItemTranslation.mockResolvedValue(mockResponse);
+
+      const result = await controller.deleteMenuItemTranslation({ id: 't1' });
+
+      expect(mockService.deleteMenuItemTranslation).toHaveBeenCalledWith('t1');
+      expect(result).toEqual(mockResponse);
     });
   });
 });

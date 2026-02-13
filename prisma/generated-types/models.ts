@@ -9,5 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/MenuCategory'
+export type * from './models/MenuCategoryTranslation'
 export type * from './models/MenuItem'
+export type * from './models/MenuItemTranslation'
 export type * from './commonInputTypes'

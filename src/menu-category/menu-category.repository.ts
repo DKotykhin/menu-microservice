@@ -3,48 +3,128 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import type { Language } from 'prisma/generated-types/enums';
-import type { MenuCategory } from 'prisma/generated-types/client';
+import type { MenuCategory, Prisma } from 'prisma/generated-types/client';
 import type {
   CreateMenuCategoryRequest,
-  MenuCategoryWithItems,
+  CreateMenuCategoryTranslationRequest,
+  MenuCategoryTranslation,
   UpdateMenuCategoryRequest,
+  UpdateMenuCategoryTranslationRequest,
 } from 'src/generated-types/menu-category';
+
+const categoryTranslationSelect = {
+  id: true,
+  language: true,
+  title: true,
+  description: true,
+} satisfies Prisma.MenuCategoryTranslationSelect;
+
+const itemTranslationSelect = {
+  id: true,
+  language: true,
+  title: true,
+  description: true,
+} satisfies Prisma.MenuItemTranslationSelect;
+
+export type MenuCategoryWithItemsPayload = Prisma.MenuCategoryGetPayload<{
+  include: {
+    menuCategoryTranslations: { select: typeof categoryTranslationSelect };
+    menuItems: {
+      include: {
+        menuItemTranslations: { select: typeof itemTranslationSelect };
+      };
+    };
+  };
+}>;
+
+export type MenuCategoryWithTranslationsPayload = Prisma.MenuCategoryGetPayload<{
+  include: {
+    menuCategoryTranslations: { select: typeof categoryTranslationSelect };
+  };
+}>;
 
 @Injectable()
 export class MenuCategoryRepository {
   private readonly logger = new Logger(MenuCategoryRepository.name);
   constructor(private readonly prisma: PrismaService) {}
 
-  // Fetch menu categories along with their items for a specific language
-  async getMenuCategoriesWithItemsByLanguage(language: Language): Promise<MenuCategoryWithItems[]> {
+  // ---- Menu Category Retrieval ---- //
+
+  // Fetch all menu categories ordered by position without translations or items
+  async getAllMenuCategories(): Promise<MenuCategory[]> {
+    this.logger.log('Fetching all menu categories');
+    return await this.prisma.menuCategory.findMany({
+      orderBy: { position: 'asc' },
+    });
+  }
+
+  // Fetch all menu categories for a specific language with translations and associated menu items with their translations
+  async getMenuCategoriesWithItemsByLanguage(language: Language): Promise<MenuCategoryWithItemsPayload[]> {
     this.logger.log(`Fetching menu categories for language: ${language}`);
     return await this.prisma.menuCategory.findMany({
-      where: { language },
       orderBy: { position: 'asc' },
       include: {
+        menuCategoryTranslations: {
+          where: { language },
+          select: categoryTranslationSelect,
+        },
         menuItems: {
           orderBy: { position: 'asc' },
+          include: {
+            menuItemTranslations: {
+              where: { language },
+              select: itemTranslationSelect,
+            },
+          },
         },
       },
     });
   }
 
-  // Fetch menu categories for a specific language
-  async getMenuCategoriesByLanguage(language: Language): Promise<MenuCategory[]> {
+  // Fetch all menu categories for a specific language with translations only (without items)
+  async getMenuCategoriesWithTranslations(language: Language): Promise<MenuCategoryWithTranslationsPayload[]> {
     this.logger.log(`Fetching menu categories for language: ${language}`);
     return await this.prisma.menuCategory.findMany({
-      where: { language },
       orderBy: { position: 'asc' },
+      include: {
+        menuCategoryTranslations: {
+          where: { language },
+          select: categoryTranslationSelect,
+        },
+      },
     });
   }
 
-  // Fetch a single menu category by its ID
+  // Fetch a single menu category by its ID without translations or items
   async getMenuCategoryById(id: string): Promise<MenuCategory | null> {
     this.logger.log(`Fetching menu category by ID: ${id}`);
     return await this.prisma.menuCategory.findUnique({
       where: { id },
     });
   }
+
+  // Fetch a single menu category by its ID with all translations
+  async getMenuCategoryByIdWithTranslations(id: string): Promise<MenuCategoryWithTranslationsPayload | null> {
+    this.logger.log(`Fetching menu category by ID with translations: ${id}`);
+    return await this.prisma.menuCategory.findUnique({
+      where: { id },
+      include: {
+        menuCategoryTranslations: {
+          select: categoryTranslationSelect,
+        },
+      },
+    });
+  }
+
+  // Check if a menu category has associated menu items
+  async hasMenuItems(categoryId: string): Promise<boolean> {
+    const count = await this.prisma.menuItem.count({
+      where: { categoryId },
+    });
+    return count > 0;
+  }
+
+  // ---- Menu Category Management ---- //
 
   // Create a new menu category
   async createMenuCategory({
@@ -54,12 +134,10 @@ export class MenuCategoryRepository {
     data: CreateMenuCategoryRequest;
     lastPosition: number;
   }): Promise<MenuCategory> {
-    this.logger.log(`Creating menu category with title: ${data.title}`);
+    this.logger.log(`Creating menu category with slug: ${data.slug}`);
     return await this.prisma.menuCategory.create({
       data: {
-        language: data.language as Language,
-        title: data.title,
-        description: data.description,
+        slug: data.slug,
         ...(data.isAvailable !== undefined && data.isAvailable !== null && { isAvailable: data.isAvailable }),
         ...(data.imageUrl && { imageUrl: data.imageUrl }),
         position: lastPosition + 1,
@@ -73,21 +151,11 @@ export class MenuCategoryRepository {
     return await this.prisma.menuCategory.update({
       where: { id: data.id },
       data: {
-        ...(data.language && { language: data.language as Language }),
-        ...(data.title && { title: data.title }),
-        ...(data.description !== undefined && data.description !== null && { description: data.description }),
+        ...(data.slug !== undefined && data.slug !== null && { slug: data.slug }),
         ...(data.isAvailable !== undefined && data.isAvailable !== null && { isAvailable: data.isAvailable }),
         ...(data.imageUrl !== undefined && data.imageUrl !== null && { imageUrl: data.imageUrl }),
       },
     });
-  }
-
-  // Check if a menu category has associated menu items
-  async hasMenuItems(categoryId: string): Promise<boolean> {
-    const count = await this.prisma.menuItem.count({
-      where: { categoryId },
-    });
-    return count > 0;
   }
 
   // Delete a menu category by its ID and update positions of remaining categories
@@ -133,6 +201,50 @@ export class MenuCategoryRepository {
       );
 
       return await prisma.menuCategory.findUnique({ where: { id } });
+    });
+  }
+
+  // ---- Menu Category Translations ---- //
+
+  // create a menu category translation
+  async createMenuCategoryTranslation({
+    title,
+    description,
+    language,
+    categoryId,
+  }: CreateMenuCategoryTranslationRequest): Promise<MenuCategoryTranslation> {
+    this.logger.log(`Creating menu category translation for category ID: ${categoryId}`);
+    return await this.prisma.menuCategoryTranslation.create({
+      data: {
+        title,
+        description,
+        language: language as Language,
+        categoryId,
+      },
+    });
+  }
+
+  // update a menu category translation
+  async updateMenuCategoryTranslation({
+    id,
+    title,
+    description,
+  }: UpdateMenuCategoryTranslationRequest): Promise<MenuCategoryTranslation> {
+    this.logger.log(`Updating menu category translation with ID: ${id}`);
+    return await this.prisma.menuCategoryTranslation.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && title !== null && { title }),
+        ...(description !== undefined && description !== null && { description }),
+      },
+    });
+  }
+
+  // delete a menu category translation
+  async deleteMenuCategoryTranslation(id: string): Promise<MenuCategoryTranslation> {
+    this.logger.log(`Deleting menu category translation with ID: ${id}`);
+    return await this.prisma.menuCategoryTranslation.delete({
+      where: { id },
     });
   }
 }
