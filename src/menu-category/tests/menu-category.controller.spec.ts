@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 import { MenuCategoryController } from '../menu-category.controller';
 import { MenuCategoryService } from '../menu-category.service';
@@ -22,7 +23,10 @@ describe('MenuCategoryController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MenuCategoryController],
-      providers: [{ provide: MenuCategoryService, useValue: mockService }],
+      providers: [
+        { provide: MenuCategoryService, useValue: mockService },
+        { provide: CACHE_MANAGER, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
+      ],
     }).compile();
 
     controller = module.get<MenuCategoryController>(MenuCategoryController);
@@ -45,20 +49,20 @@ describe('MenuCategoryController', () => {
           menuItems: [{ id: 'item-1', slug: 'espresso', translations: [] }],
         },
       ];
-      mockService.getFullMenuByLanguage.mockResolvedValue({ data: mockCategories });
+      mockService.getFullMenuByLanguage.mockResolvedValue({ categories: mockCategories });
 
       const result = await controller.getFullMenuByLanguage({ language: 'UA' as never });
 
       expect(mockService.getFullMenuByLanguage).toHaveBeenCalledWith('UA');
-      expect(result).toEqual({ data: mockCategories });
+      expect(result).toEqual({ categories: mockCategories });
     });
 
-    it('should return empty data when no categories found', async () => {
-      mockService.getFullMenuByLanguage.mockResolvedValue({ data: [] });
+    it('should return empty categories when no categories found', async () => {
+      mockService.getFullMenuByLanguage.mockResolvedValue({ categories: [] });
 
       const result = await controller.getFullMenuByLanguage({ language: 'UA' as never });
 
-      expect(result).toEqual({ data: [] });
+      expect(result).toEqual({ categories: [] });
     });
   });
 

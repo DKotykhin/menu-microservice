@@ -2,6 +2,7 @@ import type {
   MenuCategoryWithTranslation,
   MenuCategoryWithItems,
   MenuCategory,
+  FlatMenuCategoryWithItems,
 } from 'src/generated-types/menu-category';
 import type { MenuItemWithTranslation } from 'src/generated-types/menu-item';
 import type { MenuCategoryWithItemsPayload, MenuCategoryWithTranslationsPayload } from './menu-category.repository';
@@ -54,4 +55,28 @@ function toMenuItemWithTranslation(prisma: MenuCategoryWithItemsPayload['menuIte
     position: prisma.position,
     translations: prisma.menuItemTranslations,
   };
+}
+
+export function toMenuCategoryListWithTranslation(prisma: MenuCategoryWithItemsPayload[]): FlatMenuCategoryWithItems[] {
+  return prisma.map((category) => ({
+    id: category.id,
+    slug: category.slug,
+    position: category.position,
+    imageUrl: category.imageUrl,
+    isAvailable: category.isAvailable,
+    language: category.menuCategoryTranslations[0]?.language || '', // Assuming at least one translation exists
+    title: category.menuCategoryTranslations[0]?.title || '', // Assuming at least one translation exists
+    description: category.menuCategoryTranslations[0]?.description || '', // Assuming at least one translation exists
+    menuItems: category.menuItems.map((item) => ({
+      id: item.id,
+      slug: item.slug,
+      price: item.price,
+      imageUrl: item.imageUrl,
+      isAvailable: item.isAvailable,
+      position: item.position,
+      language: item.menuItemTranslations[0]?.language || '', // Assuming at least one translation exists
+      title: item.menuItemTranslations[0]?.title || '', // Assuming at least one translation exists
+      description: item.menuItemTranslations[0]?.description || '', // Assuming at least one translation exists
+    })),
+  }));
 }

@@ -66,14 +66,16 @@ describe('MenuCategoryService', () => {
 
       expect(mockRepository.getMenuCategoriesWithItemsByLanguage).toHaveBeenCalledWith('UA');
       expect(result).toEqual({
-        data: [
+        categories: [
           {
             id: '1',
             slug: 'coffee',
             position: 1,
             imageUrl: null,
             isAvailable: true,
-            translations: [{ id: 't1', language: 'UA', title: 'Кава', description: null }],
+            language: 'UA',
+            title: 'Кава',
+            description: '',
             menuItems: [
               {
                 id: 'item-1',
@@ -82,7 +84,9 @@ describe('MenuCategoryService', () => {
                 imageUrl: null,
                 isAvailable: true,
                 position: 1,
-                translations: [{ id: 'it1', language: 'UA', title: 'Еспресо', description: null }],
+                language: 'UA',
+                title: 'Еспресо',
+                description: '',
               },
             ],
           },
@@ -95,7 +99,7 @@ describe('MenuCategoryService', () => {
 
       const result = await service.getFullMenuByLanguage('UA' as never);
 
-      expect(result).toEqual({ data: [] });
+      expect(result).toEqual({ categories: [] });
     });
 
     it('should throw AppError.internalServerError on unexpected error', async () => {

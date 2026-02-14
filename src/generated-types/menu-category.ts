@@ -8,7 +8,7 @@
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { wrappers } from "protobufjs";
 import { Observable } from "rxjs";
-import { MenuItemWithTranslation } from "./menu-item";
+import { FlatMenuItemWithTranslation, MenuItemWithTranslation } from "./menu-item";
 
 export const protobufPackage = "menu_category.v1";
 
@@ -20,11 +20,6 @@ export interface Language {
 /** declaration of Id message */
 export interface Id {
   id: string;
-}
-
-/** Message representing a list of menu categories with items */
-export interface MenuCategoryListWithItems {
-  data: MenuCategoryWithItems[];
 }
 
 /** Message representing a list of menu categories with translations */
@@ -41,6 +36,11 @@ export interface MenuCategory {
   isAvailable: boolean;
   createdAt: Date | null;
   updatedAt: Date | null;
+}
+
+/** Message representing full menu response with categories and items */
+export interface FullMenuResponse {
+  categories: FlatMenuCategoryWithItems[];
 }
 
 /** Message representing a menu category translation */
@@ -70,6 +70,19 @@ export interface MenuCategoryWithItems {
   isAvailable: boolean;
   translations: MenuCategoryTranslation[];
   menuItems: MenuItemWithTranslation[];
+}
+
+/** Message representing a flat menu category with items for a specific language */
+export interface FlatMenuCategoryWithItems {
+  id: string;
+  slug: string;
+  position: number;
+  isAvailable: boolean;
+  language: string;
+  title: string;
+  description?: string | null | undefined;
+  imageUrl?: string | null | undefined;
+  menuItems: FlatMenuItemWithTranslation[];
 }
 
 /** Request message for creating a menu category. */
@@ -130,7 +143,7 @@ wrappers[".google.protobuf.Timestamp"] = {
 export interface MenuCategoryServiceClient {
   /** rpc to get full menu by language */
 
-  getFullMenuByLanguage(request: Language): Observable<MenuCategoryListWithItems>;
+  getFullMenuByLanguage(request: Language): Observable<FullMenuResponse>;
 
   /** rpc to get menu categories by language */
 
@@ -174,9 +187,7 @@ export interface MenuCategoryServiceClient {
 export interface MenuCategoryServiceController {
   /** rpc to get full menu by language */
 
-  getFullMenuByLanguage(
-    request: Language,
-  ): Promise<MenuCategoryListWithItems> | Observable<MenuCategoryListWithItems> | MenuCategoryListWithItems;
+  getFullMenuByLanguage(request: Language): Promise<FullMenuResponse> | Observable<FullMenuResponse> | FullMenuResponse;
 
   /** rpc to get menu categories by language */
 

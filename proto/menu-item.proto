@@ -62,6 +62,19 @@ message MenuItemWithTranslation {
   repeated MenuItemTranslation translations = 7;
 }
 
+// MenuItemWithTranslation represents a menu item with its translations.
+message FlatMenuItemWithTranslation {
+  string id = 1;
+  string slug = 2;
+  string price = 3;
+  bool is_available = 4;
+  int32 position = 5;
+  string language = 6;
+  string title = 7;
+  optional string description = 8;
+  optional string image_url = 9;
+}
+
 // MenuItemListWithTranslation represents a list of menu items with their translations.
 message MenuItemListWithTranslation {
   repeated MenuItemWithTranslation menu_items = 1;

@@ -7,8 +7,8 @@ import type {
   ChangeMenuCategoryPositionRequest,
   CreateMenuCategoryRequest,
   CreateMenuCategoryTranslationRequest,
+  FullMenuResponse,
   MenuCategory,
-  MenuCategoryListWithItems,
   MenuCategoryListWithTranslation,
   MenuCategoryTranslation,
   MenuCategoryWithTranslation,
@@ -30,11 +30,11 @@ export class MenuCategoryController {
   @GrpcMethod(MENU_CATEGORY_SERVICE_NAME, 'GetFullMenuByLanguage')
   @UseInterceptors(GrpcCacheInterceptor)
   @CacheTTL(60 * 1000) // Cache for 60 seconds
-  async getFullMenuByLanguage({ language }: { language: Language }): Promise<MenuCategoryListWithItems> {
+  async getFullMenuByLanguage({ language }: { language: Language }): Promise<FullMenuResponse> {
     this.logger.log(`Received request for full menu with language: ${language}`);
-    const { data } = await this.menuCategoryService.getFullMenuByLanguage(language);
-    this.logger.log(`Returning full menu with ${data.length} categories for language: ${language}`);
-    return { data };
+    const { categories } = await this.menuCategoryService.getFullMenuByLanguage(language);
+    this.logger.log(`Returning full menu with ${categories.length} categories for language: ${language}`);
+    return { categories };
   }
 
   @GrpcMethod(MENU_CATEGORY_SERVICE_NAME, 'GetMenuCategoriesByLanguage')

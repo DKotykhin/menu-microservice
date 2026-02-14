@@ -8,7 +8,7 @@ import "menu-item.proto";
 // MenuCategoryService defines the gRPC service for managing menu categories.
 service MenuCategoryService {
   // rpc to get full menu by language
-  rpc GetFullMenuByLanguage(Language) returns (MenuCategoryListWithItems) {}
+  rpc GetFullMenuByLanguage(Language) returns (FullMenuResponse) {}
   // rpc to get menu categories by language
   rpc GetMenuCategoriesByLanguage(Language) returns (MenuCategoryListWithTranslation) {}
   // rpc to get a menu category by its ID
@@ -39,11 +39,6 @@ message Id {
   string id = 1;
 }
 
-// Message representing a list of menu categories with items
-message MenuCategoryListWithItems {
-  repeated MenuCategoryWithItems data = 1;
-}
-
 // Message representing a list of menu categories with translations
 message MenuCategoryListWithTranslation {
   repeated MenuCategoryWithTranslation data = 1;
@@ -58,6 +53,11 @@ message MenuCategory {
   bool is_available = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+}
+
+// Message representing full menu response with categories and items
+message FullMenuResponse {
+  repeated FlatMenuCategoryWithItems categories = 1;
 }
 
 // Message representing a menu category translation
@@ -87,6 +87,19 @@ message MenuCategoryWithItems {
   bool is_available = 5;
   repeated MenuCategoryTranslation translations = 6;
   repeated menu_item.v1.MenuItemWithTranslation menu_items = 7;
+}
+
+// Message representing a flat menu category with items for a specific language
+message FlatMenuCategoryWithItems {
+  string id = 1;
+  string slug = 2;
+  int32 position = 3;
+  bool is_available = 4;
+  string language = 5;
+  string title = 6;
+  optional string description = 7;
+  optional string image_url = 8;
+  repeated menu_item.v1.FlatMenuItemWithTranslation menu_items = 9;
 }
 
 // Request message for creating a menu category.

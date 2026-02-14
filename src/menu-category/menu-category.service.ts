@@ -2,15 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { AppError } from 'src/utils/errors/app-error';
 import { MenuCategoryRepository } from './menu-category.repository';
-import { toMenuCategory, toMenuCategoryWithItems, toMenuCategoryWithTranslation } from './menu-category.mapper';
+import {
+  toMenuCategory,
+  toMenuCategoryListWithTranslation,
+  toMenuCategoryWithTranslation,
+} from './menu-category.mapper';
 
 import { Language } from 'prisma/generated-types/enums';
 import type {
   ChangeMenuCategoryPositionRequest,
   CreateMenuCategoryRequest,
   CreateMenuCategoryTranslationRequest,
+  FullMenuResponse,
   MenuCategory,
-  MenuCategoryListWithItems,
   MenuCategoryListWithTranslation,
   MenuCategoryTranslation,
   MenuCategoryWithTranslation,
@@ -26,17 +30,17 @@ export class MenuCategoryService {
 
   // ---- Menu Category Retrieval ---- //
 
-  async getFullMenuByLanguage(language: Language): Promise<MenuCategoryListWithItems> {
+  async getFullMenuByLanguage(language: Language): Promise<FullMenuResponse> {
     this.logger.log(`Fetching full menu for language: ${language}`);
     try {
       this.isValidLanguage(language);
       const categories_with_items = await this.menuCategoryRepository.getMenuCategoriesWithItemsByLanguage(language);
       if (categories_with_items.length === 0) {
         this.logger.warn(`No menu categories found for language: ${language}`);
-        return { data: [] }; // Return empty list instead of throwing an error
+        return { categories: [] }; // Return empty list instead of throwing an error
       }
 
-      return { data: categories_with_items.map(toMenuCategoryWithItems) };
+      return { categories: toMenuCategoryListWithTranslation(categories_with_items) };
     } catch (error) {
       this.logger.error(`Error fetching full menu: ${error instanceof Error ? error.message : error}`);
       if (error instanceof AppError) throw error;

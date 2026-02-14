@@ -47,6 +47,19 @@ export interface MenuItemWithTranslation {
   translations: MenuItemTranslation[];
 }
 
+/** MenuItemWithTranslation represents a menu item with its translations. */
+export interface FlatMenuItemWithTranslation {
+  id: string;
+  slug: string;
+  price: string;
+  isAvailable: boolean;
+  position: number;
+  language: string;
+  title: string;
+  description?: string | null | undefined;
+  imageUrl?: string | null | undefined;
+}
+
 /** MenuItemListWithTranslation represents a list of menu items with their translations. */
 export interface MenuItemListWithTranslation {
   menuItems: MenuItemWithTranslation[];
