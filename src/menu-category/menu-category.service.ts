@@ -199,8 +199,13 @@ export class MenuCategoryService {
         .map((category) => ({ id: category.id, position: category.position - 1 }));
 
       await this.menuCategoryRepository.deleteMenuCategory(id, positionUpdates);
-      this.logger.log(`Menu category with ID ${id} deleted successfully`);
-      return { success: true, message: 'Menu category deleted successfully' };
+      this.logger.log(
+        `Menu category with ID ${id} deleted successfully and positions updated for remaining categories`,
+      );
+      return {
+        success: true,
+        message: 'Menu category deleted successfully and positions updated for remaining categories',
+      };
     } catch (error) {
       this.logger.error(`Error deleting menu category: ${error instanceof Error ? error.message : error}`);
       if (error instanceof AppError) throw error;
