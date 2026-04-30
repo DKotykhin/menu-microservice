@@ -1,16 +1,4 @@
 services:
-  menu-database:
-    container_name: menu-database
-    image: postgres:latest
-    env_file:
-      - ./.env.docker
-    volumes:
-      - menu-db-data:/var/lib/postgresql/data/18
-    ports:
-      - 5432:5432
-    networks:
-      - coffeedoor-network
-
   menu-app:
     container_name: menu-app
     image: menu-microservice:latest
@@ -21,14 +9,9 @@ services:
       - 5001:5001
     env_file:
       - ./.env.docker
-    depends_on:
-      - menu-database
     networks:
       - coffeedoor-network
 
 networks:
   coffeedoor-network:
       external: true
-
-volumes:
-  menu-db-data:
